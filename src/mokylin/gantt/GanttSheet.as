@@ -1752,7 +1752,7 @@
         [Inspectable(category="Data")]
         public function get taskItemRenderer():IFactory
         {
-            return (this._taskItemRenderer);
+            return this._taskItemRenderer;
         }
 
         public function set taskItemRenderer(value:IFactory):void
@@ -2156,6 +2156,12 @@
             return this._taskVisibleTimeRangeEndFunction != null ? this._taskVisibleTimeRangeEndFunction(taskItem) : taskItem.endTime;
         }
 
+		/**
+		 * 取得 
+		 * @param tasks
+		 * @return 
+		 * 
+		 */		
         private function getFlatTaskCollectionTimeRange(tasks:ICollectionView):Object
         {
             var rangeStart:Number;
@@ -5216,6 +5222,11 @@
             this.invalidateTimeRectangle();
         }
 
+		/**
+		 * 数据有变化时，会被回调 
+		 * @param event
+		 * 
+		 */		
         private function taskCollection_collectionChangeHandler(event:Event):void
         {
             var item:Object;
@@ -5906,7 +5917,7 @@
 		public function resizeSummaryTask(summary:TaskItem, collection:IHierarchicalCollectionView, commit:Boolean):void
         {
             var range:Object;
-            this._resizingTaskSummaryDepth = (this._resizingTaskSummaryDepth + 1);
+            this._resizingTaskSummaryDepth = this._resizingTaskSummaryDepth + 1;
             var children:ICollectionView = collection.getChildren(summary.data);
             try
             {
@@ -5932,7 +5943,7 @@
             {
                 this.commitItem(summary);
             }
-            this._resizingTaskSummaryDepth = (this._resizingTaskSummaryDepth - 1);
+            this._resizingTaskSummaryDepth = this._resizingTaskSummaryDepth - 1;
         }
 
         private function installEditingCursor():void
@@ -6345,7 +6356,7 @@
             for each (rowItem in rowItems)
             {
                 rowHeight = this.rowController.getRowHeight(rowItem);
-                if (!(isNaN(rowHeight)))
+                if (!isNaN(rowHeight))
                 {
                     maskHeight = maskHeight + rowHeight;
                 }
@@ -6516,6 +6527,10 @@
             this.rowChangedHandler();
         }
 
+		/**
+		 * 行数据变化的回调 
+		 * 
+		 */		
 		public function rowChangedHandler():void
         {
             var grid:GanttSheetGridBase;

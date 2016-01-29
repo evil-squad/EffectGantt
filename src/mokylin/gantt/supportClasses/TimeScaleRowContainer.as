@@ -30,7 +30,7 @@
             var i:int;
             while (i < count)
             {
-                child = (getChildAt(i) as IUIComponent);
+                child = getChildAt(i) as IUIComponent;
                 if (child == null)
                 {
                 }
@@ -57,6 +57,12 @@
             this.layoutChildren(unscaledWidth, unscaledHeight);
         }
 
+		/**
+		 * 布局子项 
+		 * @param unscaledWidth
+		 * @param unscaledHeight
+		 * 
+		 */		
         private function layoutChildren(unscaledWidth:Number, unscaledHeight:Number):void
         {
             var child:IUIComponent;
@@ -66,25 +72,25 @@
             var count:int = numChildren;
             var preferredTotal:Number = this.getChildrenTotalPreferred();
             var explicitTotal:Number = this.getChildrenTotalExplicit();
-            var measuredTotal:Number = (preferredTotal - explicitTotal);
-            var nonExplicitHeight:Number = ((unscaledHeight - explicitTotal) - ((count - 1) * this.verticalGap));
+            var measuredTotal:Number = preferredTotal - explicitTotal;
+            var nonExplicitHeight:Number = (unscaledHeight - explicitTotal) - (count - 1) * this.verticalGap;
             var currentY:Number = 0;
             var i:int;
             while (i < count)
             {
-                child = (getChildAt(i) as IUIComponent);
+                child = getChildAt(i) as IUIComponent;
                 if (child == null)
                 {
                 }
                 else
                 {
-                    if (!(isNaN(child.explicitHeight)))
+                    if (!isNaN(child.explicitHeight))
                     {
                         preferredHeight = child.explicitHeight;
                     }
                     else
                     {
-                        preferredHeight = Math.round(((nonExplicitHeight * child.measuredHeight) / measuredTotal));
+                        preferredHeight = Math.round((nonExplicitHeight * child.measuredHeight) / measuredTotal);
                         if (preferredHeight < child.minHeight)
                         {
                             preferredHeight = child.minHeight;
@@ -92,7 +98,7 @@
                     }
                     child.move(0, currentY);
                     child.setActualSize(w, preferredHeight);
-                    currentY = (currentY + (preferredHeight + this.verticalGap));
+                    currentY = currentY + preferredHeight + this.verticalGap;
                 }
                 i++;
             }

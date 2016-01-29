@@ -350,7 +350,7 @@
                 constraints = null;
                 if (this.isTask(previousItem))
                 {
-                    if (direction == Keyboard.UP || direction == Keyboard.DOWN)
+                    if (direction == Keyboard.UP || direction == Keyboard.DOWN)//按住键盘的上下方向键，来滚动datagrid
                     {
                         index = dataGrid.itemRendererToIndex(dataGrid.itemToItemRenderer(previousItem));
                         loop = 0;
@@ -382,7 +382,7 @@
                             newItem = dataGrid.indexToItemRenderer(index).data;
                         }
                     }
-                    else
+                    else//按住键盘的左右方向键，
                     {
                         constraints = direction == Keyboard.LEFT ? this.getToConstraints(previousItem) : (direction == Keyboard.RIGHT ? this.getFromConstraints(previousItem) : null);
                         constraints = this.getVisibleContraints(constraints);

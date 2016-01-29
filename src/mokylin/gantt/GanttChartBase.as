@@ -48,12 +48,23 @@
     [Style(name="timeScaleStyleName", type="String", inherit="no")]
     public class GanttChartBase extends UIComponent 
     {
-
+		/**
+		 * 组件的水平分隔box（左右）左边是datagrid数据，右边是图形 
+		 */
         protected var _dividedBox:HDividedBox;
+		/**
+		 * 右边专门装载数据图形的顶级父容器 
+		 */		
         protected var _ganttArea:GanttArea;
+		/**
+		 * 边框类 
+		 */		
         private var _border:IFlexDisplayObject;
         protected var _taskFieldChanged:Boolean;
         private var _dividerHasMoved:Boolean = false;
+		/**
+		 * 是否初始化样式的标识 
+		 */		
         private var _styleInitialized:Boolean = false;
         private var _calendar:GregorianCalendar;
         protected var _dataGrid:GanttDataGrid;
@@ -61,9 +72,13 @@
         private var _minimalDaysInFirstWeek:Object;
         private var minimalDaysInFirstWeekChanged:Boolean;
         private var minimalDaysInFirstWeekOverride:Object;
+		/**
+		 *  每一行数据的控制类
+		 */		
         protected var _rowController:RowController;
         protected var _taskDataProvider:Object;
         protected var _taskCollection:ICollectionView;
+		
         private var _taskEndTimeField:String = "endTime";
         private var _taskEndTimeFunction:Function = null;
         private var _taskIsMilestoneField:String = "milestone";
@@ -72,7 +87,13 @@
         private var _taskLabelFunction:Function = null;
         private var _taskStartTimeField:String = "startTime";
         private var _taskStartTimeFunction:Function = null;
+		/**
+		 * 管理右边图形怎么渲染的控制类
+		 */		
         private var _timeController:TimeController;
+		/**
+		 * 右边图形的时间头组件 
+		 */		
         private var _timeScale:TimeScale;
 
         public function GanttChartBase()
@@ -114,7 +135,7 @@
             var styleDeclaration:CSSStyleDeclaration = CSSUtil.createSelector("GanttChartBase", "mokylin.gantt", styleManager);
             styleDeclaration.defaultFactory = function ():void
             {
-                this.borderColor = 0xB7BABC;
+                this.borderColor = 0xFF0000;
                 this.borderSides = "left top right bottom";
                 this.borderSkin = HaloBorder;
                 this.borderStyle = "none";
@@ -465,25 +486,27 @@
         {
             super.measure();
             var borderMetrics:EdgeMetrics = this.borderMetrics;
-            var borderTotalHeight:int = (borderMetrics.top + borderMetrics.bottom);
-            var borderTotalWidth:int = (borderMetrics.left + borderMetrics.right);
+            var borderTotalHeight:int = borderMetrics.top + borderMetrics.bottom;
+            var borderTotalWidth:int = borderMetrics.left + borderMetrics.right;
             measuredHeight = (this._dividedBox.measuredHeight + borderTotalHeight);
             measuredWidth = (this._dividedBox.measuredWidth + borderTotalWidth);
             if (this._ganttArea != null && this._dataGrid != null)
             {
                 measuredMinHeight = Math.max(this._dataGrid.measuredMinHeight, this._ganttArea.measuredMinHeight) + borderTotalHeight;
             }
-            measuredMinWidth = (this._dividedBox.measuredMinWidth + borderTotalWidth);
+            measuredMinWidth = this._dividedBox.measuredMinWidth + borderTotalWidth;
         }
 
         override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
         {
             super.updateDisplayList(unscaledWidth, unscaledHeight);
             this.layoutChrome(unscaledWidth, unscaledHeight);
+			
             var paddingLeft:Number = getStyle("paddingLeft");
             var paddingRight:Number = getStyle("paddingRight");
             var paddingTop:Number = getStyle("paddingTop");
             var paddingBottom:Number = getStyle("paddingBottom");
+			
             var borderMetrics:EdgeMetrics = this.borderMetrics;
             var contentWidth:Number = unscaledWidth - paddingLeft + paddingRight + borderMetrics.left + borderMetrics.right;
             if (contentWidth < 0)
@@ -502,11 +525,11 @@
             }
             if (this._dataGrid != null)
             {
-                this._dataGrid.height = contentHeight;
+                this._dataGrid.height = contentHeight;//左边内容
             }
             if (this._ganttArea != null)
             {
-                this._ganttArea.height = contentHeight;
+                this._ganttArea.height = contentHeight;//右边内容
             }
         }
 
@@ -568,6 +591,13 @@
         {
         }
 
+		/**
+		 * 供键盘方向键来用的，选中操作 
+		 * @param previousItem
+		 * @param direction
+		 * @return 
+		 * 
+		 */		
         public function nextItem(previousItem:Object, direction:uint):Object
         {
             return null;
@@ -794,6 +824,10 @@
             }
         }
 
+		/**
+		 * 创建左右2个可视化组件容器 
+		 * 
+		 */		
         private function createInternalContainers():void
         {
             this.createDividedBox();

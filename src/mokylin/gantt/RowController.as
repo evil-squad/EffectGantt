@@ -12,7 +12,11 @@
     import mx.events.ScrollEvent;
     import flash.events.Event;
     import mx.events.ScrollEventDirection;
-
+	/**
+	 * 每一行数据的控制，包括数据展开，组件位置变化同步等，所有因为每行数据变化引起的变化，同步都在这里处理 
+	 * @author NEIL
+	 * 
+	 */
     [ExcludeClass]
     public class RowController implements IRowController 
     {
@@ -271,7 +275,11 @@
 			}
             return value;
         }
-
+		/**
+		 * 获得更理想的头部高度值， 
+		 * @return 
+		 * 
+		 */
         private function getPreferredHeaderSize():Number
         {
             var timeScalePreferredValue:Number;
@@ -289,7 +297,7 @@
             if (this._timeScale != null)
             {
                 timeScalePreferredValue = this._timeScale.getExplicitOrMeasuredHeight();
-                minTimeScaleHeaderHeight = ((isNaN(this._timeScale.explicitMinHeight)) ? (this._timeScale.measuredMinHeight) : (this._timeScale.explicitMinHeight));
+                minTimeScaleHeaderHeight = isNaN(this._timeScale.explicitMinHeight) ? this._timeScale.measuredMinHeight : this._timeScale.explicitMinHeight;
                 if (timeScalePreferredValue < minTimeScaleHeaderHeight)
                 {
                     timeScalePreferredValue = minTimeScaleHeaderHeight;
@@ -472,6 +480,11 @@
             }
         }
 
+		/**
+		 * 当左边的表格数据有变化时，相应的右边的显示组件也会做相应的同步处理。 
+		 * @param event
+		 * 
+		 */		
         private function dataGridCollectionChangedHandler(event:CollectionEvent):void
         {
             if (this._ganttSheet)

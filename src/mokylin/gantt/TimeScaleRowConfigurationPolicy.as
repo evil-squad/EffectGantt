@@ -5,6 +5,11 @@
     import mokylin.utils.TimeUnit;
     import __AS3__.vec.*;
 
+	/**
+	 * 配置方针 
+	 * @author NEIL
+	 * 
+	 */	
     [ExcludeClass]
     public class TimeScaleRowConfigurationPolicy 
     {
@@ -151,7 +156,7 @@
                 day = 0;
                 while (day < 7)
                 {
-                    d = new Date(2003, month, (28 - day), 23, 59, 59, 999);
+                    d = new Date(2016, month, (28 - day), 23, 59, 59, 999);
                     dates.push(d);
                     day++;
                 }

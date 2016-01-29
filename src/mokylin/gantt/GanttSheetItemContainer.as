@@ -7,29 +7,39 @@
     import mx.core.IUIComponent;
     import mx.core.IDataRenderer;
 
+	/**
+	 * 每一条数据的gantt条显示组件 
+	 * @author NEIL
+	 * 
+	 */	
     [ExcludeClass]
     public class GanttSheetItemContainer extends UIComponent 
     {
-
+		private var _ganttChart:GanttChartBase;
         protected var _ganttSheet:GanttSheet;
+		private var _timeController:TimeController;
+		
         protected var _oldStartTime:Date;
         protected var _oldUnscaledWidth:Number;
         protected var _oldUnscaledHeight:Number;
         protected var _oldZoomFactor:Number;
+		
         protected var _visibleTimeRangeChanged:Boolean;
         protected var _sizeChanged:Boolean;
         protected var _itemsSizeChanged:Boolean;
         protected var _itemsPositionChanged:Boolean;
+		
         protected var _freeItemRenderers:Array;
         protected var _visibleItemRenderers:Object;
+		protected var _measuringRenderer:DisplayObject;
+		
         protected var _lockedUIDs:Array;
-        protected var _layoutOverrideYItemRenderersMap:Dictionary;
-        protected var _measuringRenderer:DisplayObject;
-        private var _ganttChart:GanttChartBase;
+        protected var _layoutOverrideYItemRenderersMap:Dictionary;  
+		  
         private var _itemRenderer:IFactory;
         private var _layoutOverrideYItemRenderers:Array;
         private var _lockedItems:Array;
-        private var _timeController:TimeController;
+		
         protected var _updateRenderersNeeded:Boolean;
 
         public function GanttSheetItemContainer(ganttSheet:GanttSheet)
