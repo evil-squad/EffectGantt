@@ -132,15 +132,19 @@
             this._timeFormatter.formatString = this._formatString;
             this._timeFormatter.referenceDate = this.referenceDate;
             this._timeFormatter.startOfYear = this.startOfYear;
+			
             this._cellLayer = new RendererLayer(this, "cells", this);
             this._cellLayer.rendererFactory = null;
             this._cellLayer.addFirst = true;
+			
             this._subTickLayer = new RendererLayer(this, "subticks", this);
             this._subTickLayer.rendererFactory = new ClassFactory(TimeScaleSubTickSkin);
             this._subTickLayer.addAfter = "cells";
+			
             this._tickLayer = new RendererLayer(this, "ticks", this);
             this._tickLayer.rendererFactory = new ClassFactory(TimeScaleTickSkin);
             this._tickLayer.addAfter = "subticks";
+			
             this._labelLayer = new RendererLayer(this, "labels", this);
             this._labelLayer.rendererFactory = this.labelRenderer;
             this._labelLayer.addAfter = "ticks";
@@ -351,7 +355,7 @@
         {
             if (this._referenceDate == null)
             {
-                this._referenceDate = new Date(2000, 0, 1, 0, 0, 0, 0);
+                this._referenceDate = new Date(2016, 0, 1, 0, 0, 0, 0);
             }
             return this._referenceDate;
         }
@@ -464,19 +468,17 @@
         {
             return this._subTickUnit;
         }
-
-        private function set _1043567839subTickUnit(value:TimeUnit):void
-        {
-            var oldValue:TimeUnit = this._subTickUnit;
-            if (oldValue == value)
-            {
-                return;
-            }
-            this._subTickUnitChanged = true;
-            this._subTickUnit = value;
-            invalidateProperties();
-            dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "subTickUnit", oldValue, value));
-        }
+		public function set subTickUnit(value:TimeUnit):void
+		{
+			var oldValue:Object = this.subTickUnit;
+			if (oldValue !== value)
+			{
+				this._subTickUnitChanged = true;
+				this._subTickUnit = value;
+				invalidateProperties();
+				dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "subTickUnit", oldValue, value));
+			}
+		}
 
         [Bindable(event="propertyChange")]
         [Inspectable(category="General", defaultValue="1")]
@@ -484,27 +486,25 @@
         {
             return this._subTickSteps;
         }
-
-        private function set _2007463210subTickSteps(value:Number):void
-        {
-            if (value < 1)
-            {
-                value = 1;
-            }
-            else
-            {
-                value = Math.ceil(value);
-            }
-            var oldValue:Number = this._subTickSteps;
-            if (oldValue == value)
-            {
-                return;
-            }
-            this._subTickStepsChanged = true;
-            this._subTickSteps = value;
-            invalidateProperties();
-            dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "subTickSteps", oldValue, value));
-        }
+		public function set subTickSteps(value:Number):void
+		{
+			if (value < 1)
+			{
+				value = 1;
+			}
+			else
+			{
+				value = Math.ceil(value);
+			}
+			var oldValue:Object = this.subTickSteps;
+			if (oldValue !== value)
+			{
+				this._subTickStepsChanged = true;
+				this._subTickSteps = value;
+				invalidateProperties();
+				dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "subTickSteps", oldValue, value));
+			}
+		}
 
         private function get tickItemFactory():IFactory
         {
@@ -549,19 +549,17 @@
         {
             return this._tickUnit;
         }
-
-        private function set _1936885953tickUnit(value:TimeUnit):void
-        {
-            var oldValue:TimeUnit = this._tickUnit;
-            if (oldValue == value)
-            {
-                return;
-            }
-            this._tickUnitChanged = true;
-            this._tickUnit = value;
-            invalidateProperties();
-            dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "tickUnit", oldValue, value));
-        }
+		public function set tickUnit(value:TimeUnit):void
+		{
+			var oldValue:Object = this.tickUnit;
+			if (oldValue !== value)
+			{
+				this._tickUnitChanged = true;
+				this._tickUnit = value;
+				invalidateProperties();
+				dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "tickUnit", oldValue, value));
+			}
+		}
 
         [Bindable(event="propertyChange")]
         [Inspectable(category="General", defaultValue="1")]
@@ -569,27 +567,26 @@
         {
             return this._tickSteps;
         }
-
-        private function set _87749750tickSteps(value:Number):void
-        {
-            if (value < 1)
-            {
-                value = 1;
-            }
-            else
-            {
-                value = Math.ceil(value);
-            }
-            var oldValue:Number = this._tickSteps;
-            if (oldValue == value)
-            {
-                return;
-            }
-            this._tickStepsChanged = true;
-            this._tickSteps = value;
-            invalidateProperties();
-            dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "tickSteps", oldValue, value));
-        }
+		
+		public function set tickSteps(value:Number):void
+		{
+			if (value < 1)
+			{
+				value = 1;
+			}
+			else
+			{
+				value = Math.ceil(value);
+			}
+			var oldValue:Object = this.tickSteps;
+			if (oldValue !== value)
+			{
+				this._tickStepsChanged = true;
+				this._tickSteps = value;
+				invalidateProperties();
+				dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "tickSteps", oldValue, value));
+			}
+		}
 
         public function get zoomFactor():Number
         {
@@ -873,7 +870,7 @@
                 sampler = new TimeSampler(calendar, start, end, unit, steps, referenceDate);
             }
             sampler.extendRange = true;
-            return (sampler.createIterator());
+            return sampler.createIterator();
         }
 
         private function dateToLabel(value:Date, formatString:String, unit:TimeUnit, steps:Number, referenceDate:Date, startOfYear:Date):String
@@ -906,7 +903,7 @@
                 endX = this.timeController.getCoordinate(item.end);
                 x = startX;
                 y = 0;
-                width = ((endX - startX) + 1);
+                width = endX - startX + 1;
                 height = unscaledHeight;
                 skin.move(x, y);
                 skin.setActualSize(width, height);
@@ -1402,7 +1399,12 @@
 				IProgrammaticSkin(value).validateNow();
 			}
         }
-
+		/**
+		 * 根据当前行的位置，得到一个日期范围
+		 * @param p
+		 * @return 
+		 * 
+		 */
 		public function getCellRangeAt(p:Point):Vector.<Date>
         {
             if (this._tickUnit == null || isNaN(this._tickSteps))
@@ -1416,58 +1418,6 @@
             range[0] = start;
             range[1] = end;
             return range;
-        }
-
-        public function set tickSteps(value:Number):void
-        {
-            var _local2:Object = this.tickSteps;
-            if (_local2 !== value)
-            {
-                this._87749750tickSteps = value;
-                if (this.hasEventListener("propertyChange"))
-                {
-                    this.dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "tickSteps", _local2, value));
-                }
-            }
-        }
-
-        public function set tickUnit(value:TimeUnit):void
-        {
-            var _local2:Object = this.tickUnit;
-            if (_local2 !== value)
-            {
-                this._1936885953tickUnit = value;
-                if (this.hasEventListener("propertyChange"))
-                {
-                    this.dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "tickUnit", _local2, value));
-                }
-            }
-        }
-
-        public function set subTickUnit(value:TimeUnit):void
-        {
-            var _local2:Object = this.subTickUnit;
-            if (_local2 !== value)
-            {
-                this._1043567839subTickUnit = value;
-                if (this.hasEventListener("propertyChange"))
-                {
-                    this.dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "subTickUnit", _local2, value));
-                }
-            }
-        }
-
-        public function set subTickSteps(value:Number):void
-        {
-            var _local2:Object = this.subTickSteps;
-            if (_local2 !== value)
-            {
-                this._2007463210subTickSteps = value;
-                if (this.hasEventListener("propertyChange"))
-                {
-                    this.dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "subTickSteps", _local2, value));
-                }
-            }
         }
     }
 }

@@ -46,6 +46,9 @@
     [Style(name="shadowDistance", type="Number", format="Length", inherit="no")]
     [Style(name="taskItemStyleName", type="String", inherit="no")]
     [Style(name="timeScaleStyleName", type="String", inherit="no")]
+	/**
+	 * gantt图的基类，创建基本组成组件 
+	 */	
     public class GanttChartBase extends UIComponent 
     {
 		/**
@@ -874,7 +877,7 @@
             {
                 this._ganttArea = new GanttArea();
                 this._ganttArea.name = "ganttArea";
-                this._ganttArea.percentWidth = 100;
+                this._ganttArea.percentWidth = 100;//100%
                 this._rowController.ganttArea = this._ganttArea;
                 this._dividedBox.addChild(this._ganttArea);
             }

@@ -236,82 +236,6 @@
 		{
             "unit":TimeUnit.MINUTE,
             "steps":30
-        },
-		{
-            "unit":TimeUnit.HOUR,
-            "steps":1
-        }, 
-		{
-            "unit":TimeUnit.HOUR,
-            "steps":2
-        }, 
-		{
-            "unit":TimeUnit.HOUR,
-            "steps":4
-        }, 
-		{
-            "unit":TimeUnit.HOUR,
-            "steps":8
-        },
-		{
-            "unit":TimeUnit.HOUR,
-            "steps":12
-        }, 
-		{
-            "unit":TimeUnit.DAY,
-            "steps":1
-        }, 
-		{
-            "unit":TimeUnit.DAY,
-            "steps":2
-        },
-		{
-            "unit":TimeUnit.WEEK,
-            "steps":1
-        },
-		{
-            "unit":TimeUnit.WEEK,
-            "steps":2
-        },
-		{
-            "unit":TimeUnit.MONTH,
-            "steps":1
-        },
-		{
-            "unit":TimeUnit.MONTH,
-            "steps":2
-        },
-		{
-            "unit":TimeUnit.QUARTER,
-            "steps":1
-        },
-		{
-            "unit":TimeUnit.HALFYEAR,
-            "steps":1
-        }, 
-		{
-            "unit":TimeUnit.YEAR,
-            "steps":1
-        }, 
-		{
-            "unit":TimeUnit.YEAR,
-            "steps":2
-        },
-		{
-            "unit":TimeUnit.YEAR,
-            "steps":5
-        },
-		{
-            "unit":TimeUnit.DECADE,
-            "steps":1
-        },
-		{
-            "unit":TimeUnit.DECADE,
-            "steps":2
-        }, 
-		{
-            "unit":TimeUnit.DECADE,
-            "steps":5
         }];
 
         private var _pendingToolTipInfo:PendingToolTipInfo;
@@ -1794,7 +1718,7 @@
         [Inspectable(category="Data")]
         public function get taskBackToFrontSortFunction():Function
         {
-            return (this._taskBackToFrontSortFunction);
+            return this._taskBackToFrontSortFunction;
         }
 
         public function set taskBackToFrontSortFunction(value:Function):void
@@ -1802,14 +1726,14 @@
             if (this._taskBackToFrontSortFunction == value)
             {
                 return;
-            };
+            }
             this._taskBackToFrontSortFunction = value;
             this.invalidateItemsSize();
         }
 
 		public function get taskLayout():TaskLayout
         {
-            return (this._taskLayout);
+            return this._taskLayout;
         }
 
 		public function set taskLayout(value:TaskLayout):void
@@ -1817,14 +1741,14 @@
             if (this._taskLayout == value)
             {
                 return;
-            };
+            }
             this._taskLayout = value;
             this.invalidateItemsSize();
         }
 
 		public function get timeController():TimeController
         {
-            return (this._timeController);
+            return this._timeController;
         }
 
 		public function set timeController(value:TimeController):void
@@ -1832,42 +1756,36 @@
             if (this._timeController == value)
             {
                 return;
-            };
+            }
             if (this._timeController)
             {
                 this._timeController.removeEventListener(GanttSheetEvent.VISIBLE_TIME_RANGE_CHANGE, this.timeController_visibleTimeRangeChangeHandler);
-            };
+            }
             this._timeController = value;
             if (this._timeController)
             {
                 if (this._explicitMinZoomFactor)
                 {
                     this._timeController.minimumZoomFactor = this._explicitMinZoomFactor;
-                };
+                }
                 if (this._explicitMaxZoomFactor)
                 {
                     this._timeController.maximumZoomFactor = this._explicitMaxZoomFactor;
-                };
-                if (((this._explicitMinVisibleTime) && (this._explicitMaxVisibleTime)))
+                }
+                if (this._explicitMinVisibleTime && this._explicitMaxVisibleTime)
                 {
                     this._timeController.setTimeBounds(this._explicitMinVisibleTime, this._explicitMaxVisibleTime);
                 }
-                else
-                {
-                    if (this._explicitMinVisibleTime)
-                    {
-                        this._timeController.setTimeBounds(this._explicitMinVisibleTime, this._timeController.maximumTime);
-                    }
-                    else
-                    {
-                        if (this._explicitMaxVisibleTime)
-                        {
-                            this._timeController.setTimeBounds(this._timeController.minimumTime, this._explicitMaxVisibleTime);
-                        };
-                    };
-                };
+                else if (this._explicitMinVisibleTime)
+				{
+					this._timeController.setTimeBounds(this._explicitMinVisibleTime, this._timeController.maximumTime);
+				}
+				else if (this._explicitMaxVisibleTime)
+				{
+					this._timeController.setTimeBounds(this._timeController.minimumTime, this._explicitMaxVisibleTime);
+				}
                 this._timeController.addEventListener(GanttSheetEvent.VISIBLE_TIME_RANGE_CHANGE, this.timeController_visibleTimeRangeChangeHandler);
-            };
+            }
             this._timeControllerChanged = true;
             invalidateProperties();
         }
@@ -1876,7 +1794,7 @@
         [Inspectable(category="Other")]
         public function get timeGrid():TimeGrid
         {
-            return (this._timeGrid);
+            return this._timeGrid;
         }
 
         public function set timeGrid(value:TimeGrid):void
@@ -1884,26 +1802,26 @@
             if (this._timeGrid == value)
             {
                 return;
-            };
+            }
             if (this._timeGrid != null)
             {
                 this.disconnectGrid(this._timeGrid);
-            };
-            this._timeGrid = ((!((value == null))) ? (value) : (this.createDefaultTimeGrid()));
+            }
+            this._timeGrid = value != null ? value : this.createDefaultTimeGrid();
             if (this._timeGrid != null)
             {
                 this.connectGrid(this._timeGrid);
-            };
+            }
             if (this._showTimeGrid)
             {
                 this.invalidateGrids();
-            };
+            }
             dispatchEvent(new Event("timeGridChanged"));
         }
 
 		public function get timeScale():TimeScale
         {
-            return (this._timeScale);
+            return this._timeScale;
         }
 
 		public function set timeScale(value:TimeScale):void
@@ -1919,31 +1837,31 @@
                 else
                 {
                     this._timeScale.addEventListener(FlexEvent.CREATION_COMPLETE, this.timeScale_creationCompleteHandler);
-                };
-            };
+                }
+            }
         }
 
         [Bindable("visibleTimeRangeChange")]
         [Inspectable(category="General")]
         public function get visibleTimeRangeEnd():Date
         {
-            if (((this._timeController) && (this._timeController.configured)))
+            if (this._timeController && this._timeController.configured)
             {
-                return (this._timeController.endTime);
-            };
+                return this._timeController.endTime;
+            }
             if (this._explicitVisibleTimeRangeEndChanged)
             {
-                return (this._explicitVisibleTimeRangeEnd);
-            };
-            return (this.maxVisibleTime);
+                return this._explicitVisibleTimeRangeEnd;
+            }
+            return this.maxVisibleTime;
         }
 
         public function set visibleTimeRangeEnd(value:Date):void
         {
-            if ((((value == null)) || ((value.time == this.visibleTimeRangeEnd.time))))
+            if (value == null || value.time == this.visibleTimeRangeEnd.time)
             {
                 return;
-            };
+            }
             this._explicitVisibleTimeRangeEnd = value;
             this._explicitVisibleTimeRangeEndChanged = true;
             invalidateProperties();
@@ -1953,15 +1871,15 @@
         [Inspectable(category="General")]
         public function get visibleTimeRangeStart():Date
         {
-            if (((this._timeController) && (this._timeController.configured)))
+            if (this._timeController && this._timeController.configured)
             {
-                return (this._timeController.startTime);
-            };
+                return this._timeController.startTime;
+            }
             if (this._explicitVisibleTimeRangeStartChanged)
             {
-                return (this._explicitVisibleTimeRangeStart);
-            };
-            return (this.minVisibleTime);
+                return this._explicitVisibleTimeRangeStart;
+            }
+            return this.minVisibleTime;
         }
 
         public function set visibleTimeRangeStart(value:Date):void
@@ -1969,7 +1887,7 @@
             if (value == null)
             {
                 return;
-            };
+            }
             this._explicitVisibleTimeRangeStart = value;
             this._explicitVisibleTimeRangeStartChanged = true;
             invalidateProperties();
@@ -1979,9 +1897,9 @@
         {
             if (this._timeController != null)
             {
-                return (this._timeController.workCalendar);
-            };
-            return (this._workCalendar);
+                return this._timeController.workCalendar;
+            }
+            return this._workCalendar;
         }
 
         public function set workCalendar(value:WorkCalendar):void
@@ -1989,12 +1907,12 @@
             if (this._workCalendar == value)
             {
                 return;
-            };
+            }
             this._workCalendar = value;
             if (this._timeController != null)
             {
                 this._timeController.workCalendar = value;
-            };
+            }
         }
 
         [Bindable("workingTimesGridChanged")]
@@ -2157,7 +2075,7 @@
         }
 
 		/**
-		 * 取得 
+		 * 取得 整个任务集合中最小的开始时间和最大的结束时间
 		 * @param tasks
 		 * @return 
 		 * 
@@ -2234,33 +2152,30 @@
             if (!(initialized))
             {
                 return;
-            };
+            }
             var dataItem:DataItem = this.itemToDataItem(item);
-            if ((dataItem is TaskItem))
+            if (dataItem is TaskItem)
             {
                 taskItem = TaskItem(dataItem);
                 this.ensureRangeVisible(taskItem.startTime, taskItem.endTime, margin);
             }
-            else
-            {
-                if ((dataItem is ConstraintItem))
-                {
-                    constraintItem = ConstraintItem(dataItem);
-                    fromTaskItem = this.itemToTaskItem(constraintItem.fromTask);
-                    toTaskItem = this.itemToTaskItem(constraintItem.toTask);
-                    start = fromTaskItem.startTime;
-                    if (toTaskItem.startTime < start)
-                    {
-                        start = toTaskItem.startTime;
-                    };
-                    end = fromTaskItem.endTime;
-                    if (toTaskItem.endTime > end)
-                    {
-                        end = toTaskItem.endTime;
-                    };
-                    this.ensureRangeVisible(start, end, margin);
-                };
-            };
+            else if (dataItem is ConstraintItem)
+			{
+				constraintItem = ConstraintItem(dataItem);
+				fromTaskItem = this.itemToTaskItem(constraintItem.fromTask);
+				toTaskItem = this.itemToTaskItem(constraintItem.toTask);
+				start = fromTaskItem.startTime;
+				if (toTaskItem.startTime < start)
+				{
+					start = toTaskItem.startTime;
+				}
+				end = fromTaskItem.endTime;
+				if (toTaskItem.endTime > end)
+				{
+					end = toTaskItem.endTime;
+				}
+				this.ensureRangeVisible(start, end, margin);
+			}
         }
 
         private function ensureRangeVisible(start:Date, end:Date, margin:Number=10):void
@@ -2278,18 +2193,15 @@
                 {
                     this._timeController.moveTo(new Date((start.time - marginDuration)), animate);
                 }
-                else
-                {
-                    if (end.time > (visibleEnd.time - marginDuration))
-                    {
-                        this._timeController.moveTo(new Date(((visibleStart.time + (end.time - visibleEnd.time)) + marginDuration)), animate);
-                    };
-                };
+                else if (end.time > (visibleEnd.time - marginDuration))
+				{
+					this._timeController.moveTo(new Date(((visibleStart.time + (end.time - visibleEnd.time)) + marginDuration)), animate);
+				}
             }
             else
             {
                 this._timeController.configure(start, end, this._timeController.width, margin, animate);
-            };
+            }
         }
 
         public function isItemConstraintTarget(item:Object):Boolean

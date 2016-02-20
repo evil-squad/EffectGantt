@@ -13,12 +13,18 @@
     [ExcludeClass]
     public class TimeScaleRowConfigurationPolicy 
     {
-
+		/**
+		 * 用来从property 
+		 */        
         private var _resourceManager:IResourceManager;
         private var _rows:Vector.<TimeScaleRow>;
         private var _timeController:TimeController;
         protected var _automaticSubTicks:Boolean;
+		/**
+		 * 过滤，排序后的 
+		 */		
         protected var _elements:Vector.<TimeScaleRowConfigurationPolicyElement>;
+		
         protected var _rawElements:Vector.<TimeScaleRowConfigurationPolicyElement>;
         private var _validationDates:Vector.<Date>;
         protected var _invalidResources:Boolean = true;
@@ -131,6 +137,11 @@
             return this._rawElements;
         }
 
+		/**
+		 * 根据TimeScaleRowSetting对应的个数创建对应个数的Elements。这个只是父类的一个空的实现，真正的实现在它的子类里 
+		 * @return 
+		 * 
+		 */		
         protected function createRawElements():Vector.<TimeScaleRowConfigurationPolicyElement>
         {
             return new Vector.<TimeScaleRowConfigurationPolicyElement>();
@@ -164,7 +175,12 @@
             }
             return dates;
         }
-
+		/**
+		 * 根据zoomFactor的值，找出对应的setting 
+		 * @param zoomFactor
+		 * @return 
+		 * 
+		 */
         public function computeRowSettings(zoomFactor:Number):Vector.<TimeScaleRowSetting>
         {
             var fitElement:TimeScaleRowConfigurationPolicyElement;
@@ -190,18 +206,29 @@
             return TimeScaleRowSetting.EMPTY_VECTOR;
         }
 
+		/**
+		 * 刷新标准及信息化 
+		 * 
+		 */		
         public function invalidateResources():void
         {
             this._invalidResources = true;
             this._invalidCriteria = true;
             this._validationDates = null;
         }
-
+		/**
+		 * 刷新标准 
+		 * 
+		 */
         public function invalidateCriteria():void
         {
             this._invalidCriteria = true;
         }
 
+		/**
+		 * 用来设置 TimeScaleRowSetting 的formatString的格式，
+		 * 与property文件关联获得时间字符串的格式信息 
+		 */		
         protected function validateResources():void
         {
         }
@@ -229,7 +256,10 @@
                 element.criteria = this.computeCriteriaForElement(element);
             }
         }
-
+		/**
+		 * 为elements排序， 
+		 * 
+		 */
         protected function updateElements():void
         {
             var lastCriteria:Number;
@@ -339,6 +369,13 @@
             return this.timeController.getProjectedTimeForUnit(setting.unit, setting.steps);
         }
 
+		/**
+		 * 取settings里面的元素TimeScaleRowSetting 
+		 * @param index
+		 * @param settings
+		 * @return 
+		 * 
+		 */		
         protected function rowIndexToSetting(index:uint, settings:Vector.<TimeScaleRowSetting>):TimeScaleRowSetting
         {
             if (index >= settings.length)
@@ -381,7 +418,7 @@
         protected function compareElements(e1:TimeScaleRowConfigurationPolicyElement, e2:TimeScaleRowConfigurationPolicyElement):int
         {
             var settings1:Vector.<TimeScaleRowSetting> = e1.settings;
-            var settings2:Vector.<TimeScaleRowSetting> = e2.settings;
+            var settings2:Vector.<TimeScaleRowSetting> = e2.settings; 
             var setting1:TimeScaleRowSetting = settings1[(settings1.length - 1)];
             var setting2:TimeScaleRowSetting = settings2[(settings2.length - 1)];
             var testMilliseconds:int = TimeScaleRowSetting.compareMilliseconds(setting1, setting2);

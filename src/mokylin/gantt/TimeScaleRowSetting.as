@@ -7,7 +7,6 @@
     [ExcludeClass]
     public class TimeScaleRowSetting 
     {
-
         public static const EMPTY_VECTOR:Vector.<TimeScaleRowSetting> = new Vector.<TimeScaleRowSetting>(0, true);
 
         public var unit:TimeUnit;

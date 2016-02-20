@@ -22,8 +22,8 @@
             if (_defaultPropertyValues == null)
             {
                 _defaultPropertyValues = createDefaultPropertyValues();
-            };
-            return (_defaultPropertyValues);
+            }
+            return _defaultPropertyValues;
         }
 
         private static function createDefaultPropertyValues():Object
@@ -64,7 +64,7 @@
             values["halfyear.format.1"] = "RRR";
             values["year.format.1"] = "yyyy";
             values["year.format.2"] = "yy";
-            return (values);
+            return values;
         }
 
         private static function get configurationSettings():Array
@@ -72,8 +72,8 @@
             if (_configurationSettings == null)
             {
                 _configurationSettings = createConfigurationSettings();
-            };
-            return (_configurationSettings);
+            }
+            return _configurationSettings;
         }
 
         private static function createConfigurationSettings():Array
@@ -81,34 +81,34 @@
             var entry:Vector.<TimeScaleRowSetting>;
             var settings:Array = [];
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 200, "date.upto.millisecond.format.1", TimeUnit.MILLISECOND, 50);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 200, "millisecond.format.1", TimeUnit.MILLISECOND, 50);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 200, "date.upto.millisecond.format.2", TimeUnit.MILLISECOND, 50);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 200, "millisecond.format.1", TimeUnit.MILLISECOND, 50);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 200, "date.upto.millisecond.format.3", TimeUnit.MILLISECOND, 50);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 200, "millisecond.format.1", TimeUnit.MILLISECOND, 50);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 250, "date.upto.millisecond.format.1", TimeUnit.MILLISECOND, 50);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 250, "millisecond.format.1", TimeUnit.MILLISECOND, 50);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 250, "date.upto.millisecond.format.2", TimeUnit.MILLISECOND, 50);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 250, "millisecond.format.1", TimeUnit.MILLISECOND, 50);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 250, "date.upto.millisecond.format.3", TimeUnit.MILLISECOND, 50);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 250, "millisecond.format.1", TimeUnit.MILLISECOND, 50);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 500, "date.upto.millisecond.format.1", TimeUnit.MILLISECOND, 100);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 500, "millisecond.format.1", TimeUnit.MILLISECOND, 100);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 500, "date.upto.millisecond.format.2", TimeUnit.MILLISECOND, 100);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 500, "millisecond.format.1", TimeUnit.MILLISECOND, 100);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 500, "date.upto.millisecond.format.3", TimeUnit.MILLISECOND, 100);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 500, "millisecond.format.1", TimeUnit.MILLISECOND, 100);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
-            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 500, "date.upto.millisecond.format.4", TimeUnit.MILLISECOND, 100);
+            entry[0] = new TimeScaleRowSetting(TimeUnit.MILLISECOND, 500, "millisecond.format.1", TimeUnit.MILLISECOND, 100);
             settings.push(entry);
             entry = new Vector.<TimeScaleRowSetting>(1, true);
             entry[0] = new TimeScaleRowSetting(TimeUnit.SECOND, 1, "date.upto.second.format.1", TimeUnit.MILLISECOND, 200);
@@ -272,7 +272,7 @@
             entry = new Vector.<TimeScaleRowSetting>(1, true);
             entry[0] = new TimeScaleRowSetting(TimeUnit.DECADE, 100, "year.format.1", TimeUnit.DECADE, 20);
             settings.push(entry);
-            return (settings);
+            return settings;
         }
 
 
@@ -287,38 +287,36 @@
                 element = new TimeScaleRowConfigurationPolicyElement();
                 element.settings = TimeScaleRowSetting.cloneVector(entry);
                 elements.push(element);
-            };
-            return (elements);
+            }
+            return elements;
         }
 
         override protected function validateResources():void
         {
             var element:TimeScaleRowConfigurationPolicyElement;
             var setting:TimeScaleRowSetting;
-            if (!(_invalidResources))
+            if (!_invalidResources)
             {
                 return;
-            };
+            }
             _invalidResources = false;
             for each (element in rawElements)
             {
                 for each (setting in element.settings)
                 {
                     setting.formatString = this.getPropertyValue(resourceManager, setting.resourceName);
-                };
-            };
+                }
+            }
         }
 
         private function getPropertyValue(resourceManager:IResourceManager, propertyName:String):String
         {
             var propertyValue:String = resourceManager.getString("mokylingantt", propertyName);
-            if (!(propertyValue))
+            if (!propertyValue)
             {
                 propertyValue = defaultPropertyValues[propertyName];
-            };
-            return (propertyValue);
+            }
+            return propertyValue;
         }
-
-
     }
 }

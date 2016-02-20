@@ -12,6 +12,11 @@
     import mokylin.gantt.supportClasses.MessageUtil;
     import mokylin.gantt.GanttSheetEvent;
 
+	/**
+	 * 时间轴的管理类 
+	 * @author NEIL
+	 * 
+	 */	
     [ExcludeClass]
     public class TimeController extends EventDispatcher 
     {
@@ -55,9 +60,9 @@
         public function TimeController()
         {
             this._easingFunction = Exponential.easeOut;
-            this._maximumTime = new Date(2900, 0);
+            this._maximumTime = new Date(2100, 0);
             this._maximumZoomFactor = (TimeUnit.DECADE.milliseconds / 20);
-            this._minimumTime = new Date(1900, 0);
+            this._minimumTime = new Date(2000, 0);
             this._minimumZoomFactor = MINIMUM_ZOOM_FACTOR;
             this._zoomFactor = TimeUnit.DAY.milliseconds / 20;
             super();

@@ -1179,15 +1179,15 @@
             var wt:WorkingTime;
             this.assertNotReadOnly();
             var newPeriod:Period = new Period(this, true, fromDate, toDate);
-            if (((!((times == null))) && (!((times.length == 0)))))
+            if (times != null && times.length != 0)
             {
                 checkWorkingTimes(times);
                 newPeriod.workingTimes.splice(0, newPeriod.workingTimes.length);
                 for each (wt in times)
                 {
                     newPeriod.workingTimes.push(wt.clone());
-                };
-            };
+                }
+            }
             this.addWorkingPeriod(newPeriod);
             this.onChanged();
         }

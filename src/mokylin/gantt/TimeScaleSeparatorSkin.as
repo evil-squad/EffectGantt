@@ -30,12 +30,12 @@
             var separatorThickness:Number = getStyle("separatorThickness");
             var separatorAlpha:Number = getStyle("separatorAlpha");
             var separatorColor:uint = getStyle("separatorColor");
-            if (separatorThickness < 1)
+            if (separatorThickness < DEFAULT_THICKNESS)
             {
                 return;
             }
-            var y:Number = (separatorThickness - 1) / 2;
-            g.lineStyle(separatorThickness, separatorColor, separatorAlpha, true, LineScaleMode.NORMAL, CapsStyle.NONE);
+            var y:Number = (separatorThickness - DEFAULT_THICKNESS) / 2;
+            g.lineStyle(separatorThickness, separatorColor, separatorAlpha, true, LineScaleMode.NORMAL, CapsStyle.ROUND);
             g.moveTo(0, y);
             g.lineTo(unscaledWidth, y);
         }

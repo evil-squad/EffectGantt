@@ -1,7 +1,11 @@
 ﻿package mokylin.utils
 {
     import mx.resources.ResourceManager;
-
+	/**
+	 * 时间刻度的枚举 
+	 * @author NEIL
+	 * 
+	 */
     [ExcludeClass]
     public class TimeIterator implements IIterator 
     {

@@ -6,7 +6,10 @@
     [ExcludeClass]
     public class TimeScaleRowConfigurationPolicyElement 
     {
-
+		/**
+		 * criteria - 标准; 条件; 准则; 
+		 * 时间与像素的对应关系，比如1秒钟对应100像素
+		 */
         public var criteria:Number;
         public var settings:Vector.<TimeScaleRowSetting>;
 

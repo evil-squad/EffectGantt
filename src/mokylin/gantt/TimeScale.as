@@ -114,13 +114,18 @@
                 this.selectRangeCursor = undefined;
                 this.selectRangeCursorOffset = undefined;
                 this.separatorAlpha = 1;
-                this.separatorColor = 0xFFFFFF;
+                this.separatorColor = 0xFF0000;
                 this.separatorSkin = TimeScaleSeparatorSkin;
-                this.separatorThickness = 1;
+                this.separatorThickness = 5;
                 this.useRollOver = true;
             };
         }
 
+		/**
+		 * 返回当前时间轴头的行实例 
+		 * @return 
+		 * 
+		 */		
         public function get automaticRows():Vector.<TimeScaleRow>
         {
             var row:TimeScaleRow;
@@ -429,6 +434,10 @@
             this._selectRangeCursor.styleChanged(styleProp, allStyles);
         }
 
+		/**
+		 * 更新时间轴头的布局 
+		 * 
+		 */		
         private function updateRowLayout():void
         {
             var info:TimeScaleRowLayoutInfo;
@@ -451,6 +460,10 @@
             }
         }
 
+		/**
+		 * 绘制时间轴头的背景 
+		 * 
+		 */		
         private function drawBackground():void
         {
             var skinClass:Class;
@@ -493,6 +506,10 @@
             this._separatorContainer = null;
         }
 
+		/**
+		 * 绘制时间轴头的每行的分隔线 
+		 * 
+		 */		
         private function drawSeparators():void
         {
             var skin:IFlexDisplayObject;
@@ -529,7 +546,7 @@
                     while (i < (rowCount - 1))
                     {
                         skin = new skinClass();
-                        if ((skin is ISimpleStyleClient))
+                        if (skin is ISimpleStyleClient)
                         {
                             ISimpleStyleClient(skin).styleName = this;
                             ISimpleStyleClient(skin).styleChanged(null);
@@ -860,6 +877,12 @@
             }
         }
 
+		/**
+		 * 根据鼠标点的位置，获得鼠标当前是时间轴头的那一行 
+		 * @param p
+		 * @return 
+		 * 
+		 */		
         private function getRowAt(p:Point):TimeScaleRow
         {
             var info:TimeScaleRowLayoutInfo;
@@ -941,7 +964,11 @@
             }
             this._installedRows = this._rows;
         }
-
+		/**
+		 * 次要的行 
+		 * @return 
+		 * 
+		 */
 		public function get minorScaleRow():TimeScaleRow
         {
             var rows:Vector.<TimeScaleRow> = this.automaticRows;
@@ -952,6 +979,10 @@
             return null;
         }
 
+		/**
+		 * 配置时间轴头的行信息，根据时间来配置 
+		 * 
+		 */		
         public function configureAutomaticRows():void
         {
             if (!this._timeController || !this._timeController.configured)
@@ -1009,7 +1040,11 @@
             }
             return this._rowConfigurationPolicy;
         }
-
+		/**
+		 * 创建一套行配置的方针
+		 * @return 
+		 * 
+		 */
         private function createRowConfigurationPolicy():TimeScaleRowConfigurationPolicy
         {
             var policy:TimeScaleRowConfigurationPolicy;
@@ -1032,6 +1067,10 @@
             return policy;
         }
 
+		/**
+		 * 更新行配置方针 
+		 * 
+		 */		
 		public function invalidateRowConfigurationPolicy():void
         {
             this._rowConfigurationPolicy = null;

@@ -12,17 +12,20 @@
     {
 
         private static const DAYS_OF_THE_YEAR_OFFSET:Array = [0, 
-															31, 
-															31 + 28, 
-															31 + 28 + 31, 
-															31 + 28 + 31 + 30, 
-															31 + 28 + 31 + 30 + 31,
-															31 + 28 + 31 + 30 + 31 + 30,
-															31 + 28 + 31 + 30 + 31 + 30 + 31, 
-															31 + 28 + 31 + 30 + 31 + 30 + 31 + 31,
-															31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30, 
-															31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31, 
-															31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30];
+															31, //1月
+															31 + 28, //1月+2月
+															31 + 28 + 31, //1月+2月+3月
+															31 + 28 + 31 + 30, //1月+2月+3月+4月
+															31 + 28 + 31 + 30 + 31,//1月+2月+3月+4月+5月
+															31 + 28 + 31 + 30 + 31 + 30,//1月+2月+3月+4月+5月+6月
+															31 + 28 + 31 + 30 + 31 + 30 + 31, //1月+2月+3月+4月+5月+6月 + 7月
+															31 + 28 + 31 + 30 + 31 + 30 + 31 + 31,//1月+2月+3月+4月+5月+6月 +7月+8月
+															31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30, //1月+2月+3月+4月+5月+6月 +7月+8月+9月
+															31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31, //1月+2月+3月+4月+5月+6月 +7月+8月+9月+10月
+															31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30];//1月+2月+3月+4月+5月+6月 +7月+8月+9月+10月+11月
+		/**
+		 * 每月所有的天数 
+		 */		
         private static const DAYS_IN_MONTH:Array = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
         private static var _defaultReferenceDate:Date;
@@ -50,7 +53,7 @@
         {
             if (_defaultReferenceDate == null || _defaultReferenceDate.timezoneOffset != _oldDefaultReferenceTimezoneOffset)
             {
-                _defaultReferenceDate = new Date(2000, 0, 1, 0, 0, 0, 0);
+                _defaultReferenceDate = new Date(2016, 0, 1, 0, 0, 0, 0);
                 _oldDefaultReferenceTimezoneOffset = _defaultReferenceDate.timezoneOffset;
             }
             return _defaultReferenceDate;
@@ -632,6 +635,13 @@
             }
         }
 
+		/**
+		 * 返回2个时间段的差值 ---单位（毫秒）； 
+		 * @param fromDate
+		 * @param toDate
+		 * @return 
+		 * 
+		 */		
 		public function getElapsedMilliseconds(fromDate:Date, toDate:Date):Number
         {
             var tmp:Date;
@@ -647,6 +657,13 @@
             return positive ? result : -result;
         }
 
+		/**
+		 * 返回2个时间段的差值 ---单位（秒）； 
+		 * @param fromDate
+		 * @param toDate
+		 * @return 
+		 * 
+		 */	
 		public function getElapsedSeconds(fromDate:Date, toDate:Date):Number
         {
             var tmp:Date;
@@ -663,6 +680,13 @@
             return positive ? result : -result;
         }
 
+		/**
+		 * 返回2个时间段的差值 ---单位（分钟）； 
+		 * @param fromDate
+		 * @param toDate
+		 * @return 
+		 * 
+		 */	
 		public function getElapsedMinutes(fromDate:Date, toDate:Date):Number
         {
             var tmp:Date;
@@ -679,6 +703,13 @@
             return positive ? result : -result;
         }
 
+		/**
+		 * 返回2个时间段的差值 ---单位（小时）； 
+		 * @param fromDate
+		 * @param toDate
+		 * @return 
+		 * 
+		 */	
 		public function getElapsedHours(fromDate:Date, toDate:Date):Number
         {
             var tmp:Date;

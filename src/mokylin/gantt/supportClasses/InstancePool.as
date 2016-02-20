@@ -10,6 +10,9 @@
     public class InstancePool 
     {
         protected var _factory:IFactory;
+		/**
+		 * 存放那些别回收的对象队列 
+		 */		
         protected var _unusedInstances:Array;
 
         public function InstancePool(factory:IFactory)
@@ -36,7 +39,7 @@
         }
 
 		/**
-		 * 重复利用 
+		 * 回收对象
 		 * @param instance
 		 * 
 		 */		
@@ -45,7 +48,11 @@
             this._unusedInstances.push(instance);
             this.instanceRecycled(instance);
         }
-
+		/**
+		 * 回收所有 
+		 * @param instances
+		 * 
+		 */
         public function recycleAll(instances:Array):void
         {
             var instance:Object;

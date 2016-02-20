@@ -134,13 +134,13 @@
                 while (currentRow < lastRow)
                 {
                     renderers = (items[currentRow] as Array);
-                    data = renderers != null && renderers.length != 0 && renderers[0] is IDataRenderer ? IDataRenderer(renderers[0]).data : null;
+                    data = (renderers != null && renderers.length != 0 && renderers[0] is IDataRenderer) ? IDataRenderer(renderers[0]).data : null;
                     if (data == null && !this.drawToBottom)
                     {
                         break;
                     }
                     r = new Rectangle(0, (rowInfo[currentRow].y - rowInfo[0].y), unscaledWidth, rowInfo[currentRow].height);
-                    this.updateGridDisplayList(r, (firstRow + currentRow), data);
+                    this.updateGridDisplayList(r, firstRow + currentRow, data);
                     currentRow++;
                 }
             }

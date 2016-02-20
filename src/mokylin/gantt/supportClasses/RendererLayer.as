@@ -62,7 +62,10 @@
         {
             return this._rendererContainer;
         }
-
+		/**
+		 * 创建该容器 
+		 * 
+		 */
         public function createRendererContainer():void
         {
             if (this._rendererContainer)
@@ -77,6 +80,10 @@
             this.createRendererPool();
         }
 
+		/**
+		 * 删除该容器
+		 * 
+		 */		
         private function removeRendererContainer():void
         {
             if (!this._rendererContainer)
@@ -88,6 +95,10 @@
             this._unusedRendererPool = null;
         }
 
+		/**
+		 * 决定该layer会被父容器加在那个层次里 
+		 * 
+		 */		
         private function addRendererContainerToParent():void
         {
             var index:int;
