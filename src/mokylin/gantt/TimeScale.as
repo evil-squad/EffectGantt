@@ -62,6 +62,7 @@
         private var _separatorSkinChanged:Boolean;
         private var _selectionLayer:Sprite;
         private var _visibleTimeRangeChanged:Boolean;
+		private var _visibleNowTimeChanged:Boolean;
         private var _styleInitialized:Boolean = false;
         private var _timeComputer:TimeComputer;
         private var _timeComputerChanged:Boolean;
@@ -428,7 +429,19 @@
             this.drawBackground();
             this.drawSeparators();
             this.drawHighlightRange();
+	
 			_thumb.x = this.timeController.getCoordinate(this.timeController.nowTime)- _thumb.width/2;
+			if(_showThumb)
+			{
+				if(_thumb.x < (-_thumb.width/2))
+				{
+					_thumb.visible = false;	
+				}
+				else
+				{
+					_thumb.visible = true;	
+				}
+			}	
         }
 
         override public function styleChanged(styleProp:String):void
@@ -716,17 +729,17 @@
 					coordinateDifference = (p.x - this._lastPanLocalPoint.x);
 					if (coordinateDifference > 0)//顺拉
 					{
-						if((this._timeController.endTime - this._timeController.nowTime) < (majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
+						if((this._timeController.endTime - this._timeController.nowTime) < 2*(majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
 						{
-							this._timeController.shiftByCoordinate(coordinateDifference,false,majorScaleRow.tickUnit,majorScaleRow.tickSteps);
+							this._timeController.shiftByCoordinate(coordinateDifference,false,minorScaleRow.tickUnit,minorScaleRow.tickSteps);
 						}	
 					}
 					else if (coordinateDifference < 0)//反拉
 					{
-						if((this._timeController.nowTime - this._timeController.startTime) < (majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
+						if((this._timeController.nowTime - this._timeController.startTime) < 2*(majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
 						{
 							if(this._timeController.startTime == 0)return;
-							this._timeController.shiftByCoordinate(coordinateDifference,false,majorScaleRow.tickUnit,majorScaleRow.tickSteps);
+							this._timeController.shiftByCoordinate(coordinateDifference,false,minorScaleRow.tickUnit,minorScaleRow.tickSteps);
 						}
 					}
 				}
@@ -971,11 +984,14 @@
 		{
 			if(!_thumbDown)
 			{
-				if((this._timeController.endTime - this._timeController.nowTime) < (majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
-				{
-					this._timeController.shiftByCoordinate(2,false,majorScaleRow.tickUnit,majorScaleRow.tickSteps);
+				if(majorScaleRow != null && majorScaleRow.tickUnit != null)
+				{	
+					if((this._timeController.endTime - this._timeController.nowTime) < (majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
+					{
+						this._timeController.shiftByCoordinate(1,false,majorScaleRow.tickUnit,majorScaleRow.tickSteps);
+					}
+					invalidateDisplayList();
 				}
-				invalidateDisplayList();
 			}
 		}
 
@@ -992,6 +1008,10 @@
             }
             this._visibleTimeRangeChanged = true;
             invalidateProperties();
+			if(!_thumbDown)
+			{
+				invalidateDisplayList();
+			}
         }
 
         private function scaleChangeHandler(event:TimeScaleEvent):void

@@ -3095,7 +3095,19 @@
 				_thumbLine.graphics.lineStyle(1,0xff0000);
 				_thumbLine.graphics.moveTo(0.5,0.5);
 				_thumbLine.graphics.lineTo(0.5,unscaledHeight);
+				
 				_thumbLine.x = this.timeController.getCoordinate(this.timeController.nowTime);
+				if(_timeScale.showThumb)
+				{
+					if(_thumbLine.x < 0)
+					{
+						_thumbLine.visible = false;
+					}
+					else
+					{
+						_thumbLine.visible = true;
+					}
+				}
 			}
             var sizeChanged:Boolean = unscaledWidth != this._oldUnscaledWidth || unscaledHeight != this._oldUnscaledHeight;
             if (sizeChanged)
@@ -5090,6 +5102,7 @@
         {
             var grid:GanttSheetGridBase;
             this._visibleTimeRangeChanged = true;
+			_visibleNowTimeChanged = true;
             invalidateProperties();
             for each (grid in this.allGrids)
             {
