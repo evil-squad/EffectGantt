@@ -44,8 +44,8 @@
     {
 
         private var _printing:Boolean;
-        private var _explicitPrintTimeRangeStart:Date;
-        private var _explicitPrintTimeRangeEnd:Date;
+        private var _explicitPrintTimeRangeStart:Number;
+        private var _explicitPrintTimeRangeEnd:Number;
 
         public function PrintGanttSheet()
         {
@@ -61,13 +61,13 @@
 		public function initializeFrom(value:GanttSheet):void
         {
             this._printing = false;
-            calendar.firstDayOfWeek = value.calendar.firstDayOfWeek;
-            calendar.minimalDaysInFirstWeek = value.calendar.minimalDaysInFirstWeek;
+            /*calendar.firstDayOfWeek = value.calendar.firstDayOfWeek;
+            calendar.minimalDaysInFirstWeek = value.calendar.minimalDaysInFirstWeek;*/
             constraintItemRenderer = value.constraintItemRenderer;
             taskItemRenderer = value.taskItemRenderer;
             itemStyleNameFunction = value.itemStyleNameFunction;
-            minVisibleTime = new Date(value.minVisibleTime.time);
-            maxVisibleTime = new Date(value.maxVisibleTime.time);
+            minVisibleTime = value.minVisibleTime;
+            maxVisibleTime = value.maxVisibleTime;
             minZoomFactor = value.minZoomFactor;
             maxZoomFactor = value.maxZoomFactor;
             visibleTimeRangeStart = value.visibleTimeRangeStart;
@@ -75,8 +75,8 @@
             showTimeGrid = value.showTimeGrid;
             showWorkingTimesGrid = value.showWorkingTimesGrid;
             showBackgroundGrid = value.showBackgroundGrid;
-            workCalendar = value.workCalendar;
-            hideNonworkingTimes = value.hideNonworkingTimes;
+            /*workCalendar = value.workCalendar;
+            hideNonworkingTimes = value.hideNonworkingTimes;*/
             setStyle("alternatingItemColors", value.getStyle("alternatingItemColors"));
             this.cloneGrids(value);
             invalidateSize();
@@ -85,69 +85,69 @@
         }
 
         [Bindable(event="propertyChange")]
-        public function get printTimeRangeStart():Date
+        public function get printTimeRangeStart():Number
         {
-            return this._explicitPrintTimeRangeStart != null ? new Date(this._explicitPrintTimeRangeStart.time) : null;
+            return this._explicitPrintTimeRangeStart;
         }
 
-        private function set _1017214943printTimeRangeStart(value:Date):void
+        private function set _1017214943printTimeRangeStart(value:Number):void
         {
-            this._explicitPrintTimeRangeStart = value != null ? new Date(value.time) : null;
+            this._explicitPrintTimeRangeStart = value;
         }
 
         [Bindable(event="propertyChange")]
-        public function get printTimeRangeEnd():Date
+        public function get printTimeRangeEnd():Number
         {
-            return this._explicitPrintTimeRangeEnd != null ? new Date(this._explicitPrintTimeRangeEnd.time) : null;
+            return this._explicitPrintTimeRangeEnd;
         }
 
-        private function set _432474216printTimeRangeEnd(value:Date):void
+        private function set _432474216printTimeRangeEnd(value:Number):void
         {
-            this._explicitPrintTimeRangeEnd = value != null ? new Date(value.time) : null;
+            this._explicitPrintTimeRangeEnd = value;
         }
 
-        public function get printedTimeRangeStart():Date
+        public function get printedTimeRangeStart():Number
         {
             var taskRange:Object;
-            var date:Date = this._explicitPrintTimeRangeStart;
-            if (date == null)
-            {
+            var date:Number = this._explicitPrintTimeRangeStart;
+            /*if (date == null)
+            {*/
                 taskRange = getTaskTimeRange();
                 if (taskRange != null)
                 {
-                    date = taskRange.start as Date;
+                    date = taskRange.start;
                 }
-            }
+            /*}
             if (date == null)
-            {
+            {*/
                 if (timeController != null && timeController.configured)
                 {
                     date = timeController.startTime;
                 }
-            }
-            return date != null ? new Date(date.time) : null;
+            /*}*/
+            return date;
         }
 
-        public function get printedTimeRangeEnd():Date
+        public function get printedTimeRangeEnd():Number
         {
             var taskRange:Object;
-            var date:Date = this._explicitPrintTimeRangeEnd;
-            if (date == null)
-            {
+            var date:Number = this._explicitPrintTimeRangeEnd;
+            /*if (date == null)
+            {*/
                 taskRange = getTaskTimeRange();
                 if (taskRange != null)
                 {
-                    date = taskRange.end as Date;
+                    date = taskRange.end;
                 }
-            }
+            /*}
             if (date == null)
-            {
+            {*/
                 if (timeController != null && timeController.configured)
                 {
                     date = timeController.endTime;
                 }
-            }
-            return date != null ? new Date(date.time) : null;
+            /*}*/
+            return date;
         }
 
         private function cloneGrids(value:GanttSheet):void
@@ -156,7 +156,7 @@
             var fGrids:Vector.<GanttSheetGridBase>;
             var frontGrid:GanttSheetGridBase;
             backgroundGrid = (value.backgroundGrid.clone() as BackgroundGrid);
-            workingTimesGrid = (value.workingTimesGrid.clone() as WorkingTimesGrid);
+//            workingTimesGrid = (value.workingTimesGrid.clone() as WorkingTimesGrid);
             timeGrid = (value.timeGrid.clone() as TimeGrid);
             var bGrids:Vector.<GanttSheetGridBase> = new Vector.<GanttSheetGridBase>();
             for each (backGrid in value.backGrids)
@@ -175,7 +175,7 @@
         public function get validNextPage():Boolean
         {
             this.startPrinting();
-            return visibleTimeRangeEnd.time < this.printedTimeRangeEnd.time;
+            return visibleTimeRangeEnd < this.printedTimeRangeEnd;
         }
 
 		public function nextPage():void
@@ -200,7 +200,7 @@
             moveTo(this.printedTimeRangeStart);
         }
 
-        public function set printTimeRangeEnd(value:Date):void
+        public function set printTimeRangeEnd(value:Number):void
         {
             var _local2:Object = this.printTimeRangeEnd;
             if (_local2 !== value)
@@ -213,7 +213,7 @@
             }
         }
 
-        public function set printTimeRangeStart(value:Date):void
+        public function set printTimeRangeStart(value:Number):void
         {
             var _local2:Object = this.printTimeRangeStart;
             if (_local2 !== value)

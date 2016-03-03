@@ -19,7 +19,7 @@
         protected var _ganttSheet:GanttSheet;
 		private var _timeController:TimeController;
 		
-        protected var _oldStartTime:Date;
+        protected var _oldStartTime:Number;
         protected var _oldUnscaledWidth:Number;
         protected var _oldUnscaledHeight:Number;
         protected var _oldZoomFactor:Number;
@@ -213,6 +213,11 @@
         {
         }
 
+		/**
+		 * 创建一个ItemRenderer实例 
+		 * @return 
+		 * 
+		 */		
         public function createItemRenderer():DisplayObject
         {
             var renderer:DisplayObject;
@@ -252,6 +257,12 @@
             this._measuringRenderer = null;
         }
 
+		/**
+		 * 回收itemrenderer 
+		 * @param renderer
+		 * @param uid
+		 * 
+		 */		
         public function recycleRenderer(renderer:DisplayObject, uid:String=null):void
         {
             if (renderer && !this.isLocked(uid))

@@ -1,8 +1,9 @@
 ﻿package mokylin.gantt
 {
     import flash.events.Event;
-    import mx.core.IDataRenderer;
     import flash.geom.Point;
+    
+    import mx.core.IDataRenderer;
 
     public class GanttSheetEvent extends Event 
     {
@@ -21,14 +22,15 @@
         public static const ITEM_ROLL_OUT:String = "itemRollOut";
         public static const ITEM_ROLL_OVER:String = "itemRollOver";
         public static const VISIBLE_TIME_RANGE_CHANGE:String = "visibleTimeRangeChange";
+		public static const VISIBLE_NOW_TIME_CHANGE:String = "visibleNowTimeChange";
 
         public var adjusting:Boolean;
         public var editKind:String;
-        public var editTime:Date;
+        public var editTime:Number;
         public var item:Object;
         public var itemArea:String;
         public var itemRenderer:IDataRenderer;
-        public var projectionChanged:Boolean;
+        
         public var offset:Point;
         public var reason:String;
         public var sourceResource:Object;
@@ -37,6 +39,9 @@
         public var targetTask:Object;
         public var triggerEvent:Event;
         public var zoomFactorChanged:Boolean;
+		public var projectionChanged:Boolean;
+		public var nowTimeChanged:Boolean;
+		public var timeRangeChanged:Boolean;
 
         public function GanttSheetEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, item:Object=null, itemArea:String=null, 
 										itemRenderer:IDataRenderer=null, reason:String=null, adjusting:Boolean=false)
@@ -71,9 +76,9 @@
             {
                 return;
             }
-            var duration:Number = taskItem.endTime.time - taskItem.startTime.time;
-            taskItem.startTime = new Date(this.editTime.time);
-            taskItem.endTime = new Date(taskItem.startTime.time + duration);
+            var duration:Number = taskItem.endTime - taskItem.startTime;
+            taskItem.startTime = this.editTime;
+            taskItem.endTime = taskItem.startTime + duration;
         }
 
         public function resizeTask():void
@@ -85,11 +90,11 @@
             }
             if (this.editKind == TaskItemEditKind.RESIZE_START)
             {
-                taskItem.startTime = this.editTime>taskItem.endTime ? new Date(taskItem.endTime.time) : new Date(this.editTime.time);
+                taskItem.startTime = this.editTime>taskItem.endTime ? taskItem.endTime : this.editTime;
             }
             else if (this.editKind == TaskItemEditKind.RESIZE_END)
 			{
-				taskItem.endTime = this.editTime<taskItem.startTime ? new Date(taskItem.startTime.time) : new Date(this.editTime.time);
+				taskItem.endTime = this.editTime<taskItem.startTime ? taskItem.startTime : this.editTime;
 			}
         }
 
@@ -121,7 +126,9 @@
             event.offset = this.offset;
             event.triggerEvent = this.triggerEvent;
             event.zoomFactorChanged = this.zoomFactorChanged;
-            return (event);
+			event.nowTimeChanged = this.nowTimeChanged;
+			event.timeRangeChanged = this.timeRangeChanged;
+            return event;
         }
     }
 }

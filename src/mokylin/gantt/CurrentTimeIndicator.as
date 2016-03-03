@@ -1,10 +1,12 @@
 ﻿package mokylin.gantt
 {
-    import flash.utils.Timer;
-    import mokylin.utils.TimeUnit;
-    import mx.graphics.SolidColorStroke;
     import flash.events.TimerEvent;
     import flash.geom.Rectangle;
+    import flash.utils.Timer;
+    
+    import mx.graphics.SolidColorStroke;
+    
+    import mokylin.utils.TimeUnit;
 
     public class CurrentTimeIndicator extends TimeGridBase 
     {
@@ -51,8 +53,8 @@
 
         override protected function commitProperties():void
         {
-            var currentTime:Date;
-            var floor:Date;
+            var currentTime:Number;
+            var floor:Number;
             super.commitProperties();
             if (this._updateTimeChanged)
             {
@@ -64,9 +66,9 @@
                         this._updateTimer = new Timer(0);
                         this._updateTimer.addEventListener(TimerEvent.TIMER, this.updateTimeGrid);
                     }
-                    currentTime = new Date();
-                    floor = calendar.floor(currentTime, this._updateTime, 1);
-                    this._updateTimer.delay = this._updateTime.milliseconds - currentTime.time - floor.time;
+                    currentTime = 0;
+                    floor = timeComputer.floor(currentTime, this._updateTime, 1);
+                    this._updateTimer.delay = this._updateTime.milliseconds - currentTime - floor;
                     if (!this._updateTimer.running)
                     {
                         this._updateTimer.start();
@@ -104,9 +106,9 @@
                 return;
             }
             var size:Number = getRendererWidth();
-            var startTime:Date = timeController.getTime(-size);
-            var endTime:Date = timeController.getTime(timeController.width + size);
-            var currentTime:Date = calendar.floor(new Date(), this.updateTime, 1);
+            var startTime:Number = timeController.getTime(-size);
+            var endTime:Number = timeController.getTime(timeController.width + size);
+            var currentTime:Number = timeComputer.floor(0, this.updateTime, 1);
             if (currentTime >= startTime && currentTime <= endTime)
             {
                 drawLine(r, timeController.getCoordinate(currentTime), data);

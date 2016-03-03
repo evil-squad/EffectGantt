@@ -25,8 +25,7 @@
     import mokylin.gantt.supportClasses.MessageUtil;
     import mokylin.utils.CSSUtil;
     import mokylin.utils.DataUtil;
-    import mokylin.utils.GregorianCalendar;
-    import mokylin.utils.TimeUtil;
+    import mokylin.utils.TimeComputer;
 
     [Style(name="borderColor", type="uint", format="Color", inherit="no")]
     [Style(name="borderSides", type="String", inherit="no")]
@@ -69,7 +68,8 @@
 		 * 是否初始化样式的标识 
 		 */		
         private var _styleInitialized:Boolean = false;
-        private var _calendar:GregorianCalendar;
+//        private var _calendar:GregorianCalendar;
+		private var _timeComputer:TimeComputer;
         protected var _dataGrid:GanttDataGrid;
         protected var _ganttSheet:GanttSheet;
         private var _minimalDaysInFirstWeek:Object;
@@ -117,7 +117,7 @@
             }
             LicenseHandler.addElixirEnterpriseToMenu();*/
             this._timeController = new TimeController();
-            this._timeController.calendar = this.calendar;
+            this._timeController.timeComputer = this.timeComputer;
             this._rowController = new RowController();
             addEventListener(MouseEvent.MOUSE_WHEEL, this.mouseWheelHandler, true);
             hasFocusableChildren = true;
@@ -164,13 +164,13 @@
             return this._border && (this._border is IBorder) ? IBorder(this._border).borderMetrics : EdgeMetrics.EMPTY;
         }
 
-        public function get calendar():GregorianCalendar
+        public function get timeComputer():TimeComputer
         {
-            if (this._calendar == null)
+            if (this._timeComputer == null)
             {
-                this._calendar = new GregorianCalendar();
+                this._timeComputer = new TimeComputer();
             }
-            return this._calendar;
+            return this._timeComputer;
         }
 
         [Inspectable(category="General")]
@@ -231,7 +231,7 @@
             }
         }
 
-        [Inspectable(category="General", type="Number", enumeration="0,1,2,3,4,5,6")]
+        /*[Inspectable(category="General", type="Number", enumeration="0,1,2,3,4,5,6")]
         public function get firstDayOfWeek():Object
         {
             return this.calendar.firstDayOfWeek;
@@ -240,7 +240,7 @@
         public function set firstDayOfWeek(value:Object):void
         {
             this.calendar.firstDayOfWeek = value;
-        }
+        }*/
 
         [Inspectable(category="General")]
         public function get ganttSheet():GanttSheet
@@ -262,7 +262,7 @@
             }
         }
 
-        [Inspectable(category="General", type="Number", enumeration="1,2,3,4,5,6,7", defaultValue="1")]
+        /*[Inspectable(category="General", type="Number", enumeration="1,2,3,4,5,6,7", defaultValue="1")]
         public function get minimalDaysInFirstWeek():Object
         {
             return this.calendar.minimalDaysInFirstWeek;
@@ -271,7 +271,7 @@
         public function set minimalDaysInFirstWeek(value:Object):void
         {
             this.calendar.minimalDaysInFirstWeek = value;
-        }
+        }*/
 
 		public function get rowController():IRowController
         {
@@ -611,7 +611,7 @@
             return this.dataGrid.itemRendererToIndex(this.dataGrid.itemToItemRenderer(item1)) - this.dataGrid.itemRendererToIndex(this.dataGrid.itemToItemRenderer(item2));
         }
 
-		public function getVisibleTaskItems(rowItem:Object, start:Date, end:Date):Array
+		public function getVisibleTaskItems(rowItem:Object, start:Number, end:Number):Array
         {
             var item:Object;
             var taskItem:TaskItem;
@@ -650,14 +650,14 @@
             if (!property || property == this.taskStartTimeField || this.taskStartTimeFunction != null)
             {
                 value = DataUtil.getFieldValue(item.data, this.taskStartTimeField, null, this.taskStartTimeFunction);
-                date = TimeUtil.getDate(value);
-                item.startTime = date!=null ? new Date(date) : new Date();
+                //date = TimeUtil.getDate(value);
+                item.startTime = Number(value);
             }
             if (!property || property == this.taskEndTimeField || this.taskEndTimeFunction != null)
             {
                 value = DataUtil.getFieldValue(item.data, this.taskEndTimeField, null, this.taskEndTimeFunction);
-                date = TimeUtil.getDate(value);
-                item.endTime = date!=null ? new Date(date) : new Date();
+                //date = TimeUtil.getDate(value);
+                item.endTime = Number(value);
             }
             if (!property || property == this.taskIsMilestoneField || this.taskIsMilestoneFunction != null)
             {
@@ -754,7 +754,7 @@
             }
             this._ganttSheet.name = "ganttSheet";
             this._ganttSheet.setGanttChart(this);
-            this._ganttSheet.setCalendar(this.calendar);
+            this._ganttSheet.setTimeComputer(this.timeComputer);
             this._ganttSheet.rowController = this._rowController;
             this._ganttSheet.timeController = this._timeController;
             this._ganttSheet.timeScale = this._timeScale;
@@ -779,7 +779,7 @@
                 this._ganttArea.removeChild(oldTimeScale);
             }
             this._timeScale.name = "timeScale";
-            this._timeScale.setCalendar(this.calendar);
+//            this._timeScale.setCalendar(this.calendar);
             this._timeScale.timeController = this._timeController;
             this._timeScale.enabled = enabled;
             if (!this._timeScale.styleName)

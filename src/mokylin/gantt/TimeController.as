@@ -1,16 +1,15 @@
 ﻿package mokylin.gantt
 {
     import flash.events.EventDispatcher;
-    import mokylin.utils.TimeUnit;
+    
     import mx.effects.Tween;
-    import mokylin.utils.GregorianCalendar;
-    import mokylin.utils.WorkCalendar;
-    import mokylin.gantt.supportClasses.TimeControllerState;
     import mx.effects.easing.Exponential;
-    import flash.events.Event;
-    import mokylin.utils.TimeUtil;
+    
     import mokylin.gantt.supportClasses.MessageUtil;
-    import mokylin.gantt.GanttSheetEvent;
+    import mokylin.gantt.supportClasses.TimeControllerState;
+    import mokylin.utils.TimeComputer;
+    import mokylin.utils.TimeUnit;
+    import mokylin.utils.TimeUtil;
 
 	/**
 	 * 时间轴的管理类 
@@ -20,37 +19,40 @@
     [ExcludeClass]
     public class TimeController extends EventDispatcher 
     {
+		/**
+		 * 最小的时间与像素的单位：1ms == 20px 
+		 */
+        private static const MINIMUM_ZOOM_FACTOR:Number = TimeUnit.MILLISECOND.milliseconds;
 
-        private static const MINIMUM_ZOOM_FACTOR:Number = (TimeUnit.MILLISECOND.milliseconds / 1);
-
+		private var _animationInitialStart:Number;
+		private var _animationInitialEnd:Number;
+		private var _animationFinalStart:Number;
+		private var _animationFinalEnd:Number;
+		private var _animationProjectedStartRange:Number;
+		private var _animationProjectedEndRange:Number;
         private var _animationTargetTC:TimeController;
         private var _animationTween:Tween;
-        private var _workCalendarChanged:Boolean;
-        private var _animationDuration:Number = 1000;
-        private var _calendar:GregorianCalendar;
+		private var _animationDuration:Number = 1000;
+		private var _easingFunction:Function;
+		
+        private var _timeComputer:TimeComputer;
         private var _configured:Boolean;
-        private var _easingFunction:Function;
+        
         private var _enableEvents:Boolean = true;
-        private var _endTime:Date;
-        private var _hideNonWorkingTimes:Boolean;
-        private var _isHidingNonworkingTimes:Boolean;
-        private var _maximumDuration:Number;
-        private var _maximumTime:Date;
-        private var _maximumWorkingTime:Date;
-        private var _maximumZoomFactor:Number;
-        private var _minimumTime:Date;
-        private var _minimumWorkingTime:Date;
+		private var _startTime:Number;
+        private var _endTime:Number;
+		private var _nowTime:Number=0;
+        
+        private var _maximumTime:Number; 
+        private var _minimumTime:Number;
+		
         private var _minimumZoomFactor:Number;
-        private var _startTime:Date;
+		private var _maximumZoomFactor:Number;
+        
+		private var _maximumDuration:Number;
         private var _width:Number;
-        private var _workCalendar:WorkCalendar;
         private var _zoomFactor:Number;
-        private var _animationInitialStart:Date;
-        private var _animationInitialEnd:Date;
-        private var _animationFinalStart:Date;
-        private var _animationFinalEnd:Date;
-        private var _animationProjectedStartRange:Number;
-        private var _animationProjectedEndRange:Number;
+        
         private var _nestedVisibleTimeRangeChangeCount:int = 0;
         private var _initialState:TimeControllerState;
         private var _isAdjusting:Boolean;
@@ -60,11 +62,11 @@
         public function TimeController()
         {
             this._easingFunction = Exponential.easeOut;
-            this._maximumTime = new Date(2100, 0);
-            this._maximumZoomFactor = (TimeUnit.DECADE.milliseconds / 20);
-            this._minimumTime = new Date(2000, 0);
+            this._maximumTime = TimeUnit.HOUR.milliseconds;
+            this._maximumZoomFactor = (TimeUnit.SECOND.milliseconds * 10) / 50;
+            this._minimumTime = 0;
             this._minimumZoomFactor = MINIMUM_ZOOM_FACTOR;
-            this._zoomFactor = TimeUnit.DAY.milliseconds / 20;
+            this._zoomFactor = (TimeUnit.SECOND.milliseconds * 10) / 20;
             super();
         }
 
@@ -78,22 +80,22 @@
             this._animationDuration = value;
         }
 
-		public function get calendar():GregorianCalendar
+		public function get timeComputer():TimeComputer
         {
-            if (!this._calendar)
+            if (!this._timeComputer)
             {
-                this.calendar = new GregorianCalendar();
+                this.timeComputer = new TimeComputer();
             }
-            return this._calendar;
+            return this._timeComputer;
         }
 
-		public function set calendar(value:GregorianCalendar):void
+		public function set timeComputer(value:TimeComputer):void
         {
             if (!value)
             {
-                value = new GregorianCalendar();
+                value = new TimeComputer();
             }
-            this._calendar = value;
+            this._timeComputer = value;
         }
 
         public function get configured():Boolean
@@ -121,38 +123,6 @@
             this._enableEvents = value;
         }
 
-        public function get endTime():Date
-        {
-            return this._endTime;
-        }
-
-        public function set endTime(value:Date):void
-        {
-            this.beginVisibleTimeRangeChange();
-            this._endTime = value;
-            this.endVisibleTimeRangeChange();
-        }
-
-        public function get hideNonworkingTimes():Boolean
-        {
-            return this._hideNonWorkingTimes;
-        }
-
-        public function set hideNonworkingTimes(value:Boolean):void
-        {
-            if (value == this._hideNonWorkingTimes)
-            {
-                return;
-            }
-            this._hideNonWorkingTimes = value;
-            this.updateIsHidingNonworkingTimes();
-        }
-
-        public function get isHidingNonworkingTimes():Boolean
-        {
-            return this._isHidingNonworkingTimes;
-        }
-
         private function get maximumDuration():Number
         {
             if (isNaN(this._maximumDuration))
@@ -162,20 +132,12 @@
             return this._maximumDuration;
         }
 
-        public function get maximumTime():Date
+        public function get maximumTime():Number
         {
-            if (this.isHidingNonworkingTimes)
-            {
-                if (this._maximumWorkingTime == null)
-                {
-                    this._maximumWorkingTime = this.workCalendar.previousWorkingTime(this._maximumTime);
-                }
-                return this._maximumWorkingTime;
-            }
             return this._maximumTime;
         }
 
-        public function set maximumTime(value:Date):void
+        public function set maximumTime(value:Number):void
         {
             this.stopAnimation();
             this.beginVisibleTimeRangeChange();
@@ -203,20 +165,12 @@
             this.endVisibleTimeRangeChange();
         }
 
-        public function get minimumTime():Date
+        public function get minimumTime():Number
         {
-            if (this.isHidingNonworkingTimes)
-            {
-                if (this._minimumWorkingTime == null)
-                {
-                    this._minimumWorkingTime = this.workCalendar.nextWorkingTime(this._minimumTime);
-                }
-                return this._minimumWorkingTime;
-            }
             return this._minimumTime;
         }
 
-        public function set minimumTime(value:Date):void
+        public function set minimumTime(value:Number):void
         {
             this.stopAnimation();
             this.beginVisibleTimeRangeChange();
@@ -248,24 +202,48 @@
             this.endVisibleTimeRangeChange();
         }
 
-        public function get startTime():Date
+        public function get startTime():Number
         {
             return this._startTime;
         }
 
-        public function set startTime(value:Date):void
+        public function set startTime(value:Number):void
         {
             this.stopAnimation();
             this.beginVisibleTimeRangeChange();
             this.setStartTimeImpl(value);
             this.endVisibleTimeRangeChange();
         }
-
-        final private function setStartTimeImpl(value:Date):void
-        {
-            this._startTime = this.getConstrainedStart(value);
-            this._endTime = this.getTime(this.width);
-        }
+		
+		final private function setStartTimeImpl(value:Number):void
+		{
+			this._startTime = this.getConstrainedStart(value);
+			this._endTime = this.getTime(this.width);
+		}
+		
+		public function get nowTime():Number
+		{
+			return this._nowTime;
+		}
+		
+		public function set nowTime(value:Number):void
+		{
+			this.beginVisibleTimeRangeChange();
+			this._nowTime = value;
+			this.endVisibleTimeRangeChange();
+		}
+		
+		public function get endTime():Number
+		{
+			return this._endTime;
+		}
+		
+		public function set endTime(value:Number):void
+		{
+			this.beginVisibleTimeRangeChange();
+			this._endTime = value;
+			this.endVisibleTimeRangeChange();
+		}  
 
         public function get width():Number
         {
@@ -280,65 +258,25 @@
             this.beginVisibleTimeRangeChange();
             this._width = value;
             var endTimeInMillis:Number = this.getTimeInMillis(this.width);
-            if (endTimeInMillis > this.maximumTime.time)
+            if (endTimeInMillis > this.maximumTime)
             {
-                startTimeInMillis = this.startTime.time - endTimeInMillis - this.maximumTime.time;
-                endTimeInMillis = this.maximumTime.time;
+                startTimeInMillis = this.startTime - endTimeInMillis - this.maximumTime;
+                endTimeInMillis = this.maximumTime;
                 newZoomFactor = this.zoomFactor;
-                if (startTimeInMillis < this.minimumTime.time)
+                if (startTimeInMillis < this.minimumTime)
                 {
-                    startTimeInMillis = this.minimumTime.time;
-                    endTimeInMillis = this.maximumTime.time;
+                    startTimeInMillis = this.minimumTime;
+                    endTimeInMillis = this.maximumTime;
                     newZoomFactor = (this.getProjectedTimeBetweenInMillis(this.minimumTime, this.maximumTime) / this.width);
                 }
-                this._startTime = new Date(startTimeInMillis);
+                this._startTime = startTimeInMillis;
                 this.zoomFactor = newZoomFactor;
             }
             else
             {
-                this._endTime = new Date(endTimeInMillis);
+                this._endTime = endTimeInMillis;
             }
             this.endVisibleTimeRangeChange();
-        }
-
-        public function get workCalendar():WorkCalendar
-        {
-            return this._workCalendar;
-        }
-
-        public function set workCalendar(value:WorkCalendar):void
-        {
-            if (this._workCalendar == value)
-            {
-                return;
-            }
-            if (this._workCalendar != null)
-            {
-                this._workCalendar.removeEventListener(Event.CHANGE, this.workCalendar_change);
-            }
-            this._workCalendar = value;
-            if (this._workCalendar != null)
-            {
-                this._workCalendar.addEventListener(Event.CHANGE, this.workCalendar_change);
-            }
-            this.updateIsHidingNonworkingTimes();
-        }
-
-        private function updateIsHidingNonworkingTimes():void
-        {
-            var newEndInMillis:Number;
-            var oldValue:Boolean = this.isHidingNonworkingTimes;
-            var newValue:Boolean = this.workCalendar != null && this.hideNonworkingTimes;
-            if (newValue == oldValue)
-            {
-                return;
-            }
-            this._isHidingNonworkingTimes = newValue;
-            if (this.startTime != null && !isNaN(this.width) && !isNaN(this.zoomFactor))
-            {
-                newEndInMillis = this.addProjectedTimeInMillis(this.startTime, (this.width * this.zoomFactor));
-                this.configure(this.startTime, new Date(newEndInMillis), this.width);
-            }
         }
 
         public function get zoomFactor():Number
@@ -346,6 +284,11 @@
             return this._zoomFactor;
         }
 
+		/**
+		 * 一个像素对应多少毫秒 
+		 * @param value
+		 * 
+		 */		
         public function set zoomFactor(value:Number):void
         {
             this.stopAnimation();
@@ -355,7 +298,7 @@
             this.endVisibleTimeRangeChange();
         }
 
-        public function configure(start:Date, end:Date, width:Number, margin:Number=0, animate:Boolean=false):void
+        public function configure(start:Number, end:Number, width:Number, margin:Number=0, animate:Boolean=false):void
         {
             if (animate && this.animationDuration != 0)
             {
@@ -371,26 +314,24 @@
             }
         }
 
-        public function getCoordinate(time:Date, floor:Boolean=true):Number
+        public function getCoordinate(time:Number, floor:Boolean=true):Number
         {
             var timeOffset:Number;
-            if (this.isHidingNonworkingTimes)
-            {
-                timeOffset = this.workCalendar.workBetween(this.startTime, time);
-            }
-            else
-            {
-                timeOffset = time.time - this.startTime.time;
-            }
-            var value:Number = (timeOffset / this.zoomFactor);
+            timeOffset = time - this.startTime;
+            var value:Number = timeOffset / this.zoomFactor;
             return floor ? Math.floor(value) : value;
         }
 
-        public function getTime(coordinate:Number):Date
+        public function getTime(coordinate:Number):Number
         {
-            return new Date(this.getTimeInMillis(coordinate));
+            return this.getTimeInMillis(coordinate);
         }
-
+		/**
+		 * 得到多少个像素 
+		 * @param duration
+		 * @return 
+		 * 
+		 */
         public function getSizeOf(duration:Number):Number
         {
             return duration / this.zoomFactor;
@@ -398,10 +339,6 @@
 
         public function getProjectedTimeForUnit(unit:TimeUnit, steps:Number):Number
         {
-            if (this.isHidingNonworkingTimes)
-            {
-                return this.workCalendar.getWorkingTimeForUnit(unit, steps);
-            }
             return unit.milliseconds * steps;
         }
 
@@ -411,46 +348,42 @@
             return this.addProjectedTimeInMillis(this.startTime, projectedTimeOffset);
         }
 
-        private function addProjectedTimeInMillis(time:Date, projectedTime:Number):Number
+        private function addProjectedTimeInMillis(time:Number, projectedTime:Number):Number
         {
+//			projectedTime = timeComputer.ceil(projectedTime);
             projectedTime = Math.floor(projectedTime);
-            if (this.isHidingNonworkingTimes)
-            {
-                if (projectedTime == 0)
-                {
-                    return time.time;
-                }
-                if (projectedTime > 0)
-                {
-                    return this.workCalendar.addWorkingTime(time, projectedTime).time;
-                }
-                return this.workCalendar.removeWorkingTime(time, -projectedTime).time;
-            }
-            return time.time + projectedTime;
+            
+            return time + projectedTime;
         }
-
-        private function getProjectedTimeBetweenInMillis(t1:Date, t2:Date):Number
+		/**
+		 * 2个时间相差多少毫秒 
+		 * @param t1
+		 * @param t2
+		 * @return 
+		 * 
+		 */
+        private function getProjectedTimeBetweenInMillis(t1:Number, t2:Number):Number
         {
-            if (this.isHidingNonworkingTimes)
-            {
-                return this.workCalendar.workBetween(t1, t2);
-            }
-            return t2.time - t1.time;
+            return t2 - t1;
         }
-
-        public function setTimeBounds(min:Date, max:Date):void
+		/**
+		 * 设置时间轴的起始时间，结束时间，及每个像素表示多少毫秒差
+		 * @param min
+		 * @param max
+		 * 
+		 */
+        public function setTimeBounds(min:Number, max:Number):void
         {
             this.stopAnimation();
             this.beginVisibleTimeRangeChange();
             this._minimumTime = TimeUtil.bound(min, TimeUtil.MINIMUM_DATE, TimeUtil.MAXIMUM_DATE);
             this._maximumTime = TimeUtil.bound(max, TimeUtil.MINIMUM_DATE, TimeUtil.MAXIMUM_DATE);
-            this._minimumWorkingTime = null;
-            this._maximumWorkingTime = null;
+
             this._maximumDuration = NaN;
             if (this.configured)
             {
                 this.setStartTimeImpl(this.startTime);
-                if (this.endTime > this.maximumTime && this.startTime.time == this.minimumTime.time && this.zoomFactor < this.maximumZoomFactor)
+                if (this.endTime > this.maximumTime && this.startTime == this.minimumTime && this.zoomFactor < this.maximumZoomFactor)
                 {
                     this.zoomFactor = Math.min(this.maximumZoomFactor, this.getProjectedTimeBetweenInMillis(this.minimumTime, this.maximumTime) / this.width);
                 }
@@ -458,7 +391,13 @@
             this.endVisibleTimeRangeChange();
         }
 
-        public function moveTo(time:Date, animate:Boolean=false):void
+		/**
+		 * 变相的改变时间的起始时间 
+		 * @param time
+		 * @param animate
+		 * 
+		 */		
+        public function moveTo(time:Number, animate:Boolean=false):void
         {
             if (animate && this.animationDuration != 0)
             {
@@ -474,20 +413,38 @@
             }
         }
 
-        public function shiftByCoordinate(delta:Number, animate:Boolean=false):void
+        public function shiftByCoordinate(delta:Number, animate:Boolean=false,unit:TimeUnit=null,steps:Number=0):void
         {
-            var projectedTimeOffset:Number = delta * this.zoomFactor;
+            var projectedTimeOffset:Number;
+			var positive:int=1;
+			if(unit != null && steps != 0)
+			{
+				/*if(delta > 0)
+				{
+					positive=1;
+				}
+				else
+				{
+					positive=-1;
+				}*/
+				projectedTimeOffset = delta * positive * unit.milliseconds * steps;
+			}
+			else
+			{
+				projectedTimeOffset = delta * this.zoomFactor
+			}
+			
             var newStartInMillis:Number = this.addProjectedTimeInMillis(this.startTime, projectedTimeOffset);
-            this.moveTo(new Date(newStartInMillis), animate);
+            this.moveTo(newStartInMillis, animate);
         }
 
         public function shiftByProjectedTime(delta:Number, animate:Boolean=false):void
         {
             var newStartInMillis:Number = this.addProjectedTimeInMillis(this.startTime, delta);
-            this.moveTo(new Date(newStartInMillis), animate);
+            this.moveTo(newStartInMillis, animate);
         }
 
-        public function zoomAndCenter(ratio:Number, time:Date=null, animate:Boolean=false):void
+        public function zoomAndCenter(ratio:Number, time:Number=0, animate:Boolean=false):void
         {
             if (animate && this.animationDuration != 0)
             {
@@ -519,7 +476,7 @@
             }
         }
 
-        public function focusOn(time:Date, unit:TimeUnit, steps:Number, animate:Boolean=false):void
+        public function focusOn(time:Number, unit:TimeUnit, steps:Number, animate:Boolean=false):void
         {
             if (animate && this.animationDuration != 0)
             {
@@ -535,13 +492,13 @@
             }
         }
 
-		protected function configureImpl(start:Date, end:Date, width:Number, margin:Number=0):void
+		protected function configureImpl(start:Number, end:Number, width:Number, margin:Number=0):void
         {
-            if (start == null || isNaN(start.time))
+            if (isNaN(start))
             {
                 throw MessageUtil.wrongArgument(TimeController, "TimeController.configureImpl", "start");
             }
-            if (end == null || isNaN(end.time))
+            if (isNaN(end))
             {
                 throw MessageUtil.wrongArgument(TimeController, "TimeController.configureImpl", "end");
             }
@@ -566,7 +523,7 @@
             this.endVisibleTimeRangeChange();
         }
 
-        private function configureDefaultImpl(start:Date, end:Date, width:Number, margin:Number):void
+        private function configureDefaultImpl(start:Number, end:Number, width:Number, margin:Number):void
         {
             this._width = width;
             var projectedDuration:Number = this.getProjectedTimeBetweenInMillis(start, end);
@@ -575,26 +532,26 @@
             this._zoomFactor = this.getConstrainedZoomFactor(zf);
             if (margin > 0)
             {
-                start = new Date(this.addProjectedTimeInMillis(start, (-(this.zoomFactor) * margin)));
+                start = this.addProjectedTimeInMillis(start, (-this.zoomFactor * margin));
             }
             this.setStartTimeImpl(start);
             this._configured = true;
         }
 
-        private function reconfigureImpl(start:Date, end:Date, width:Number, margin:Number):void
+        private function reconfigureImpl(start:Number, end:Number, width:Number, margin:Number):void
         {
             var projectedOffsetInMillis:Number;
             this._width = width;
             var projectedDuration:Number = this.getProjectedTimeBetweenInMillis(start, end);
-            var rangeCenterTime:Date = new Date(this.addProjectedTimeInMillis(start, (projectedDuration / 2)));
+            var rangeCenterTime:Number = this.addProjectedTimeInMillis(start, (projectedDuration / 2));
             var initialRangeCenterPosition:Number = this.getCoordinate(rangeCenterTime);
             var marginsExceedWidth:Boolean = (2 * margin) >= width;
             var zf:Number = marginsExceedWidth ? projectedDuration : projectedDuration / (width - (2 * margin));
             this._zoomFactor = this.getConstrainedZoomFactor(zf);
             if (margin > 0)
             {
-                start = new Date(this.addProjectedTimeInMillis(start, (-this.zoomFactor * margin)));
-                end = new Date(this.addProjectedTimeInMillis(end, (this.zoomFactor * margin)));
+                start = this.addProjectedTimeInMillis(start, (-this.zoomFactor * margin));
+                end = this.addProjectedTimeInMillis(end, (this.zoomFactor * margin));
             }
             var requiredWidth:Number = Math.ceil(projectedDuration / this.zoomFactor + 2 * margin);
             if (requiredWidth >= width)
@@ -605,33 +562,29 @@
             {
                 this.setStartTimeImpl(start);
                 projectedOffsetInMillis = this.getProjectedTimeBetweenInMillis(this.getTime(initialRangeCenterPosition), rangeCenterTime);
-                this.setStartTimeImpl(new Date(this.addProjectedTimeInMillis(this.startTime, projectedOffsetInMillis)));
+                this.setStartTimeImpl(this.addProjectedTimeInMillis(this.startTime, projectedOffsetInMillis));
                 if (start < this.startTime)
                 {
                     this.setStartTimeImpl(start);
                 }
                 else if (end > this.endTime)
 				{
-					this.setStartTimeImpl(new Date(this.addProjectedTimeInMillis(end, (-this.zoomFactor * width))));
+					this.setStartTimeImpl(this.addProjectedTimeInMillis(end, (-this.zoomFactor * width)));
 				}
             }
         }
 
-        private function getConstrainedStart(value:Date):Date
+        private function getConstrainedStart(value:Number):Number
         {
-            if (this.isHidingNonworkingTimes)
-            {
-                value = this.workCalendar.nextWorkingTime(value);
-            }
-            var valueInMillis:Number = Math.max(value.time, this.minimumTime.time);
+            var valueInMillis:Number = Math.max(value, this.minimumTime);
             var projectedDuration:Number = this.width * this.zoomFactor;
-            var endTimeInMillis:Number = this.addProjectedTimeInMillis(new Date(valueInMillis), projectedDuration);
-            if (endTimeInMillis > this.maximumTime.time && valueInMillis > this.minimumTime.time)
+            var endTimeInMillis:Number = this.addProjectedTimeInMillis(valueInMillis, projectedDuration);
+            if (endTimeInMillis > this.maximumTime && valueInMillis > this.minimumTime)
             {
                 valueInMillis = this.addProjectedTimeInMillis(this.maximumTime, -projectedDuration);
-                valueInMillis = Math.max(valueInMillis, this.minimumTime.time);
+                valueInMillis = Math.max(valueInMillis, this.minimumTime);
             }
-            return new Date(valueInMillis);
+            return valueInMillis;
         }
 
         private function getConstrainedZoomFactor(value:Number):Number
@@ -652,9 +605,9 @@
             return value;
         }
 
-		protected function focusOnImpl(time:Date, unit:TimeUnit, steps:Number):void
+		protected function focusOnImpl(time:Number, unit:TimeUnit, steps:Number):void
         {
-            if (time == null || isNaN(time.time))
+            if (isNaN(time))
             {
                 throw MessageUtil.wrongArgument(TimeController, "TimeController.focusOnImpl", "time");
             }
@@ -667,15 +620,15 @@
                 steps = 1;
             }
             this.beginVisibleTimeRangeChange();
-            var start:Date = this.calendar.floor(time, unit, steps);
-            var end:Date = this.calendar.addUnits(start, unit, steps);
+            var start:Number = this.timeComputer.floor(time, unit, steps);
+            var end:Number = this.timeComputer.addUnits(start, unit, steps);
             this.configureImpl(start, end, this.width);
             this.endVisibleTimeRangeChange();
         }
 
-		protected function moveToImpl(time:Date):void
+		protected function moveToImpl(time:Number):void
         {
-            if (time == null || isNaN(time.time))
+            if (isNaN(time))
             {
                 throw MessageUtil.wrongArgument(TimeController, "TimeController.moveToImpl", "time");
             }
@@ -684,28 +637,28 @@
             this.endVisibleTimeRangeChange();
         }
 
-		protected function zoomAndCenterImpl(ratio:Number, time:Date=null):void
+		protected function zoomAndCenterImpl(ratio:Number, time:Number=0):void
         {
             var centerOnMillis:Number;
             if (isNaN(ratio))
             {
                 throw MessageUtil.wrongArgument(TimeController, "TimeController.zoomAndCenterImpl", "ratio");
             }
-            if (time != null && isNaN(time.time))
+            if (isNaN(time))
             {
                 throw MessageUtil.wrongArgument(TimeController, "TimeController.zoomAndCenterImpl", "time");
             }
             this.beginVisibleTimeRangeChange();
-            if (time == null)
+            if (time == 0)
             {
                 centerOnMillis = this.getTimeInMillis(this.width / 2);
             }
             else
             {
-                centerOnMillis = time.time;
+                centerOnMillis = time;
             }
             this.zoomFactor = this.zoomFactor * ratio;
-            this.startTime = new Date(this.addProjectedTimeInMillis(new Date(centerOnMillis), (-this.width / 2) * this.zoomFactor));
+            this.startTime = this.addProjectedTimeInMillis(centerOnMillis, (-this.width / 2) * this.zoomFactor);
             this.endVisibleTimeRangeChange();
         }
 
@@ -720,10 +673,10 @@
                 throw MessageUtil.wrongArgument(TimeController, "TimeController.zoomAtImpl", "coordinate");
             }
             this.beginVisibleTimeRangeChange();
-            var initialTimeAtCoordinate:Date = this.getTime(coordinate);
-            this.zoomFactor = (this.zoomFactor * ratio);
+            var initialTimeAtCoordinate:Number = this.getTime(coordinate);
+            this.zoomFactor = this.zoomFactor * ratio;
             var projectedOffsetInMillis:Number = this.getProjectedTimeBetweenInMillis(this.getTime(coordinate), initialTimeAtCoordinate);
-            this.startTime = new Date(this.addProjectedTimeInMillis(this.startTime, projectedOffsetInMillis));
+            this.startTime = this.addProjectedTimeInMillis(this.startTime, projectedOffsetInMillis);
             this.endVisibleTimeRangeChange();
         }
 
@@ -733,9 +686,8 @@
             {
                 this._animationTargetTC = new TimeController();
             }
-            this._animationTargetTC.calendar = this.calendar;
-            this._animationTargetTC.workCalendar = this.workCalendar;
-            this._animationTargetTC.hideNonworkingTimes = this.hideNonworkingTimes;
+            this._animationTargetTC.timeComputer = this.timeComputer;
+
             this._animationTargetTC.minimumTime = this.minimumTime;
             this._animationTargetTC.maximumTime = this.maximumTime;
             this._animationTargetTC.minimumZoomFactor = this.minimumZoomFactor;
@@ -769,8 +721,8 @@
 
         public function onTweenUpdate(value:Number):void
         {
-            var start:Date = new Date(this.addProjectedTimeInMillis(this._animationInitialStart, Math.floor(this._animationProjectedStartRange / 100) * value));
-            var end:Date = new Date(this.addProjectedTimeInMillis(this._animationInitialEnd, Math.floor(this._animationProjectedEndRange / 100) * value));
+            var start:Number = this.addProjectedTimeInMillis(this._animationInitialStart, Math.floor(this._animationProjectedStartRange / 100) * value);
+            var end:Number = this.addProjectedTimeInMillis(this._animationInitialEnd, Math.floor(this._animationProjectedEndRange / 100) * value);
             this.configureImpl(start, end, this.width);
         }
 
@@ -800,6 +752,10 @@
                 {
                     this.dispatchVisibleTimeRangeChange(currentState);
                 }
+				if(!currentState.equalsNowTime(this._initialState))
+				{
+					this.dispatchVisibleNowTimeChange(currentState);
+				}
             }
         }
 
@@ -826,6 +782,18 @@
         {
             return this._isAdjusting || this._animationTween != null;
         }
+		
+		private function dispatchVisibleNowTimeChange(currentState:TimeControllerState):void
+		{
+			if (!this._enableEvents)
+			{
+				return;
+			}
+			var event:GanttSheetEvent = new GanttSheetEvent(GanttSheetEvent.VISIBLE_NOW_TIME_CHANGE);
+			event.adjusting = this.isAdjusting;
+			event.nowTimeChanged = true;
+			dispatchEvent(event);
+		}
 
         private function dispatchVisibleTimeRangeChange(currentState:TimeControllerState):void
         {
@@ -834,38 +802,25 @@
                 return;
             }
             var zoomFactorChanged:Boolean = this._previousState == null || currentState.zoomFactor != this._previousState.zoomFactor;
-            var projectionChanged:Boolean = this._workCalendarChanged || this._previousState == null || currentState.isHidingNonworkingTimes != this._previousState.isHidingNonworkingTimes;
-           
+			var nowTimeChanged:Boolean = this._previousState == null || currentState.nowTime != this._previousState.nowTime;
+/*			var timeRangeChanged:Boolean = this._previousState == null || currentState.startTime != this._previousState.startTime
+											|| currentState.endTime != this._previousState.endTime;*/
+			
+//			var projectionChanged:Boolean = this._workCalendarChanged || this._previousState == null || currentState.isHidingNonworkingTimes != this._previousState.isHidingNonworkingTimes;
 			var event:GanttSheetEvent = new GanttSheetEvent(GanttSheetEvent.VISIBLE_TIME_RANGE_CHANGE);
             event.adjusting = this.isAdjusting;
             event.zoomFactorChanged = zoomFactorChanged;
-            event.projectionChanged = projectionChanged;
+            event.nowTimeChanged = nowTimeChanged;
+//			event.timeRangeChanged = timeRangeChanged;
             dispatchEvent(event);
 			
             this._previousState = currentState;
-            this._workCalendarChanged = false;
             if (this.isAdjusting)
             {
                 this._visibleTimeRangeChangedWhileAdusting = true;
             }
         }
 
-        private function workCalendar_change(event:Event):void
-        {
-            var newEndInMillis:Number;
-            this._maximumWorkingTime = null;
-            this._minimumWorkingTime = null;
-            if (!this.hideNonworkingTimes)
-            {
-                return;
-            }
-            this._workCalendarChanged = true;
-            if (this.startTime != null && !isNaN(this.width) && !isNaN(this.zoomFactor))
-            {
-                newEndInMillis = this.addProjectedTimeInMillis(this.startTime, (this.width * this.zoomFactor));
-                this.configure(this.startTime, new Date(newEndInMillis), this.width);
-            }
-        }
 		/**
 		 * 主要是监控endTime，startTime,zoomFactor， isHidingNonworkingTimes这4个属性的变化，然后以事件来通知其它模块更新
 		 * @return 
@@ -873,7 +828,7 @@
 		 */
         private function getState():TimeControllerState
         {
-            return new TimeControllerState((this.endTime != null ? this.endTime.time : NaN), (this.startTime != null ? this.startTime.time : NaN), this.zoomFactor, this.isHidingNonworkingTimes);
+            return new TimeControllerState(this.nowTime,this.endTime, this.startTime, this.zoomFactor);
         }
     }
 }

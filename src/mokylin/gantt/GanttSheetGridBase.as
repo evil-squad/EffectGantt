@@ -1,9 +1,11 @@
 ﻿package mokylin.gantt
 {
-    import mx.core.UIComponent;
-    import mokylin.utils.GregorianCalendar;
     import flash.geom.Rectangle;
+    
     import mx.core.IDataRenderer;
+    import mx.core.UIComponent;
+    
+    import mokylin.utils.TimeComputer;
 
     public class GanttSheetGridBase extends UIComponent 
     {
@@ -68,9 +70,9 @@
             return this._ganttSheet != null ? this._ganttSheet.timeController : null;
         }
 
-		public function get calendar():GregorianCalendar
+		public function get timeComputer():TimeComputer
         {
-            return this._ganttSheet != null ? this._ganttSheet.calendar : null;
+            return this._ganttSheet != null ? this._ganttSheet.timeComputer : null;
         }
 
         public function clone():GanttSheetGridBase

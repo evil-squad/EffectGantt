@@ -1,17 +1,18 @@
 ﻿package mokylin.gantt
 {
-    import mokylin.gantt.GanttDataGrid;
-    import mx.collections.ICollectionView;
-    import mokylin.gantt.GanttSheet;
-    import mokylin.gantt.TimeScale;
-    import mx.events.CollectionEvent;
-    import mokylin.gantt.supportClasses.MessageUtil;
-    import mx.logging.LogEventLevel;
-    import mokylin.gantt.supportClasses.GanttProperties;
-    import mx.events.AdvancedDataGridEvent;
-    import mx.events.ScrollEvent;
     import flash.events.Event;
+    
+    import mx.collections.ICollectionView;
+    import mx.events.AdvancedDataGridEvent;
+    import mx.events.CollectionEvent;
+    import mx.events.ScrollEvent;
     import mx.events.ScrollEventDirection;
+    import mx.logging.LogEventLevel;
+    
+    import mokylin.gantt.GanttDataGrid;
+    import mokylin.gantt.GanttSheet;
+    import mokylin.gantt.supportClasses.GanttProperties;
+    import mokylin.gantt.supportClasses.MessageUtil;
 	/**
 	 * 每一行数据的控制，包括数据展开，组件位置变化同步等，所有因为每行数据变化引起的变化，同步都在这里处理 
 	 * @author NEIL

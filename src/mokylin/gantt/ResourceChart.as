@@ -421,7 +421,7 @@
         {
         }
 
-        override public function getVisibleTaskItems(rowItem:Object, start:Date, end:Date):Array
+        override public function getVisibleTaskItems(rowItem:Object, start:Number, end:Number):Array
         {
             var item:Object;
             var margin:Number;
@@ -430,9 +430,9 @@
             if (ganttSheet != null && ganttSheet.initialized)
             {
                 margin = 20;
-                duration = (ganttSheet.getTime(margin).time - ganttSheet.getTime(0).time);
-                start = new Date((start.time - duration));
-                end = new Date((end.time + duration));
+                duration = (ganttSheet.getTime(margin) - ganttSheet.getTime(0));
+                start = (start - duration);
+                end = (end + duration);
             }
             var tasks:Array = this.rowItemToTasks(rowItem);
             var taskItems:Array = [];

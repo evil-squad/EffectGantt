@@ -24,7 +24,7 @@
 
         public function TimeGridBase()
         {
-            this._stroke = new SolidColorStroke(0);
+            this._stroke = new SolidColorStroke(0xff0000);
             super();
         }
 

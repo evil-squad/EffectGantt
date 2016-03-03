@@ -2,7 +2,7 @@
 {
     public class TimeScaleCellItem 
     {
-        public var start:Date;
-        public var end:Date;
+        public var start:Number;
+        public var end:Number;
     }
 }

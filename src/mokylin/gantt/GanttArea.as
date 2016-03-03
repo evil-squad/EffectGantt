@@ -1,14 +1,15 @@
 ﻿package mokylin.gantt
 {
-    import mx.core.Container;
-    import mx.managers.IFocusManagerComponent;
-    import mx.core.ScrollPolicy;
-    import mx.skins.halo.HaloBorder;
-    import flash.events.MouseEvent;
     import flash.events.KeyboardEvent;
-    import mokylin.gantt.GanttSheet;
-    import mokylin.gantt.TimeScale;
+    import flash.events.MouseEvent;
+    
+    import mx.core.Container;
     import mx.core.EdgeMetrics;
+    import mx.core.ScrollPolicy;
+    import mx.managers.IFocusManagerComponent;
+    import mx.skins.halo.HaloBorder;
+    
+    import mokylin.gantt.GanttSheet;
 
     [ExcludeClass]
     public class GanttArea extends Container implements IFocusManagerComponent 
@@ -16,7 +17,7 @@
 
         private var _rowController:IRowController;
         private var _showTimeScale:Boolean = true;
-        private var _timeScaleHeight:Number;
+        private var TimeScaleHeight:Number;
 
         public function GanttArea()
         {
@@ -67,7 +68,7 @@
 
 		public function set timeScaleHeight(value:Number):void
         {
-            this._timeScaleHeight = value;
+            this.TimeScaleHeight = value;
             invalidateDisplayList();
             if (this.ganttSheet != null && this.ganttSheet.ganttChart != null)
             {
@@ -77,7 +78,7 @@
 
 		public function get timeScaleHeight():Number
         {
-            return this._timeScaleHeight;
+            return this.TimeScaleHeight;
         }
 
         override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
@@ -97,14 +98,14 @@
             var ganttSheet:GanttSheet = this.ganttSheet;
             if (timeScale != null)
             {
-                timeScale.move(0, 0);
-                timeScaleHeight = this._timeScaleHeight;
+				timeScale.move(0, 0);
+                timeScaleHeight = this.TimeScaleHeight;
                 if (isNaN(timeScaleHeight))
                 {
                     timeScaleHeight = timeScale.getExplicitOrMeasuredHeight();
                 }
-                timeScale.setActualSize(contentWidth, timeScaleHeight);
-                timeScale.visible = this._showTimeScale;
+				timeScale.setActualSize(contentWidth, timeScaleHeight);
+				timeScale.visible = this._showTimeScale;
             }
             if (ganttSheet != null)
             {
@@ -124,7 +125,7 @@
             var ganttSheetMinWidth:Number;
             super.measure();
             var vm:EdgeMetrics = viewMetrics;
-            timeScale = this.timeScale;
+			timeScale = this.timeScale;
             var timeScaleMinHeight:Number = timeScale != null ? timeScale.measuredMinHeight : 0;
             timeScaleMinWidth = timeScale != null ? timeScale.measuredMinWidth : 0;
             timeScaleHeight = timeScale != null ? timeScale.getExplicitOrMeasuredHeight() : 0;

@@ -9,12 +9,12 @@
     public class TaskItem extends DataItem 
     {
 
-        public var endTime:Date;
+        public var endTime:Number;
         public var isMilestone:Boolean;
         public var isSummary:Boolean;
         public var label:String;
         public var resourceId:String;
-        public var startTime:Date;
+        public var startTime:Number;
         private var _uid:String;
 
         public function TaskItem(owner:GanttSheet, data:Object)

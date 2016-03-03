@@ -130,8 +130,8 @@
                 return;
             }
             var rowController:IRowController = this.rowController;
-            var start:Date = timeController.startTime;
-            var end:Date = timeController.endTime;
+            var start:Number = timeController.startTime;
+            var end:Number = timeController.endTime;
             var updateAllRows:Boolean;
             if (_sizeChanged || _itemsSizeChanged || _itemsPositionChanged)
             {
@@ -339,6 +339,14 @@
             return taskLayoutInfo;
         }
 
+		/**
+		 * 这个才是算出taskitem的宽度的函数入口--妈的，找半天 
+		 * @param renderer
+		 * @param taskItem
+		 * @param rowLayoutInfo
+		 * @param taskLayoutInfo
+		 * 
+		 */		
         private function layoutRenderer(renderer:DisplayObject, taskItem:TaskItem, rowLayoutInfo:RowLayoutInfo, taskLayoutInfo:TaskLayoutInfo):void
         {
             var taskLocked:Boolean = this.taskLayout.isTaskLocked(taskItem.data);
@@ -369,7 +377,7 @@
             }
         }
 
-        private function getVisibleTaskItems(rowItem:Object, start:Date, end:Date):Array
+        private function getVisibleTaskItems(rowItem:Object, start:Number, end:Number):Array
         {
             return ganttSheet.getVisibleTaskItems(rowItem, start, end);
         }
@@ -441,8 +449,8 @@
             var i:uint;
             var lane:Vector.<TaskItem>;
             var group:Array;
-            var groupStart:Date;
-            var groupEnd:Date;
+            var groupStart:Number;
+            var groupEnd:Number;
             var t1:TaskItem;
             var t1LaneIndex:uint;
             var extended:Boolean;
@@ -676,7 +684,7 @@
             {
                 b = IConstraintConnectionBounds(renderer);
                 b.measureConnectionBounds();
-                return (b.connectionBounds.clone());
+                return b.connectionBounds.clone();
             }
             if (renderer)
             {

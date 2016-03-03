@@ -3,8 +3,10 @@
     public class TimeUtil 
     {
 
-        public static const MINIMUM_DATE:Date = new Date(100, 0);
-        public static const MAXIMUM_DATE:Date = new Date(10000, 0);
+        public static const MINIMUM_DATE_Old:Date = new Date(100, 0);
+        /*public static const MAXIMUM_DATE:Date = new Date(10000, 0);*/
+		public static const MINIMUM_DATE:Number = 0;
+		public static const MAXIMUM_DATE:Number = 3600000;
         public static const SUNDAY:int = 0;
         public static const MONDAY:int = 1;
         public static const TUESDAY:int = 2;
@@ -17,10 +19,10 @@
         private static const minutesMilliseconds:Number = TimeUnit.MINUTE.milliseconds;
         private static const secondsMilliseconds:Number = TimeUnit.SECOND.milliseconds;
 
-        private static var _defaultGregorianCalendar:GregorianCalendar = new GregorianCalendar();
+//        private static var _defaultGregorianCalendar:GregorianCalendar = new GregorianCalendar();
 
 
-        public static function bound(time:Date, minValue:Date, maxValue:Date):Date
+        public static function bound(time:Number, minValue:Number, maxValue:Number):Number
         {
             if (time < minValue)
             {

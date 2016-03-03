@@ -7,20 +7,18 @@
     [ExcludeClass]
     public class TimeScaleRowSetting 
     {
+
         public static const EMPTY_VECTOR:Vector.<TimeScaleRowSetting> = new Vector.<TimeScaleRowSetting>(0, true);
 
         public var unit:TimeUnit;
         public var steps:Number = 1;
         public var subunit:TimeUnit;
         public var substeps:Number;
-        public var resourceName:String;
-        public var formatString:String;
 
-        public function TimeScaleRowSetting(unit:TimeUnit=null, steps:Number=1, resourceName:String=null, subunit:TimeUnit=null, substeps:Number=NaN)
+        public function TimeScaleRowSetting(unit:TimeUnit=null, steps:Number=1,subunit:TimeUnit=null, substeps:Number=NaN)
         {
             this.unit = unit;
             this.steps = steps;
-            this.resourceName = resourceName;
             this.subunit = subunit;
             this.substeps = substeps;
         }
@@ -64,8 +62,7 @@
 
         public function clone():Object
         {
-            var clone:TimeScaleRowSetting = new TimeScaleRowSetting(this.unit, this.steps, this.resourceName, this.subunit, this.substeps);
-            clone.formatString = this.formatString;
+            var clone:TimeScaleRowSetting = new TimeScaleRowSetting(this.unit, this.steps,this.subunit, this.substeps);
             return clone;
         }
     }

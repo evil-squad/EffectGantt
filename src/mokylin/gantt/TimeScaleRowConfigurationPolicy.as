@@ -1,32 +1,19 @@
 ﻿package mokylin.gantt
 {
-    import mx.resources.IResourceManager;
     import __AS3__.vec.Vector;
+    
     import mokylin.utils.TimeUnit;
-    import __AS3__.vec.*;
 
-	/**
-	 * 配置方针 
-	 * @author NEIL
-	 * 
-	 */	
     [ExcludeClass]
     public class TimeScaleRowConfigurationPolicy 
     {
-		/**
-		 * 用来从property 
-		 */        
-        private var _resourceManager:IResourceManager;
+
         private var _rows:Vector.<TimeScaleRow>;
         private var _timeController:TimeController;
         protected var _automaticSubTicks:Boolean;
-		/**
-		 * 过滤，排序后的 
-		 */		
         protected var _elements:Vector.<TimeScaleRowConfigurationPolicyElement>;
-		
         protected var _rawElements:Vector.<TimeScaleRowConfigurationPolicyElement>;
-        private var _validationDates:Vector.<Date>;
+        private var _validationDates:Vector.<Number>;
         protected var _invalidResources:Boolean = true;
         protected var _invalidCriteria:Boolean = true;
 
@@ -34,21 +21,6 @@
         {
             this._rows = new Vector.<TimeScaleRow>();
             super();
-        }
-
-        public function get resourceManager():IResourceManager
-        {
-            return this._resourceManager;
-        }
-
-        public function set resourceManager(value:IResourceManager):void
-        {
-            if (this._resourceManager == value)
-            {
-                return;
-            }
-            this._resourceManager = value;
-            this.invalidateResources();
         }
 
         public function get rows():Vector.<TimeScaleRow>
@@ -131,14 +103,14 @@
             if (this._rawElements == null)
             {
                 this._rawElements = this.createRawElements();
-                this.invalidateResources();
+//                this.invalidateResources();
                 this.invalidateCriteria();
             }
             return this._rawElements;
         }
 
 		/**
-		 * 根据TimeScaleRowSetting对应的个数创建对应个数的Elements。这个只是父类的一个空的实现，真正的实现在它的子类里 
+		 * 空函数，没什么用 --主要实现在它的子类里 
 		 * @return 
 		 * 
 		 */		
@@ -146,37 +118,8 @@
         {
             return new Vector.<TimeScaleRowConfigurationPolicyElement>();
         }
-
-        protected function get validationDates():Vector.<Date>
-        {
-            if (this._validationDates == null)
-            {
-                this._validationDates = this.createValidationDates();
-            }
-            return this._validationDates;
-        }
-
-        protected function createValidationDates():Vector.<Date>
-        {
-            var day:int;
-            var d:Date;
-            var dates:Vector.<Date> = new Vector.<Date>();
-            var month:int = 9;
-            while (month < 12)
-            {
-                day = 0;
-                while (day < 7)
-                {
-                    d = new Date(2016, month, (28 - day), 23, 59, 59, 999);
-                    dates.push(d);
-                    day++;
-                }
-                month++;
-            }
-            return dates;
-        }
 		/**
-		 * 根据zoomFactor的值，找出对应的setting 
+		 * 根据时间轴头的每像素对应的时间，与setting对比，选用那种方案来创建刻度 
 		 * @param zoomFactor
 		 * @return 
 		 * 
@@ -185,8 +128,9 @@
         {
             var fitElement:TimeScaleRowConfigurationPolicyElement;
             var element:TimeScaleRowConfigurationPolicyElement;
-            this.validateResources();
+//            this.validateResources();
             this.validateCriteria();
+			
             for each (element in this.elements)
             {
                 if (element.criteria >= zoomFactor)
@@ -206,31 +150,9 @@
             return TimeScaleRowSetting.EMPTY_VECTOR;
         }
 
-		/**
-		 * 刷新标准及信息化 
-		 * 
-		 */		
-        public function invalidateResources():void
-        {
-            this._invalidResources = true;
-            this._invalidCriteria = true;
-            this._validationDates = null;
-        }
-		/**
-		 * 刷新标准 
-		 * 
-		 */
         public function invalidateCriteria():void
         {
             this._invalidCriteria = true;
-        }
-
-		/**
-		 * 用来设置 TimeScaleRowSetting 的formatString的格式，
-		 * 与property文件关联获得时间字符串的格式信息 
-		 */		
-        protected function validateResources():void
-        {
         }
 
         protected function validateCriteria():void
@@ -256,10 +178,7 @@
                 element.criteria = this.computeCriteriaForElement(element);
             }
         }
-		/**
-		 * 为elements排序， 
-		 * 
-		 */
+
         protected function updateElements():void
         {
             var lastCriteria:Number;
@@ -346,13 +265,12 @@
             var milliseconds:Number;
             var millisecondsPerPixel:Number;
             var rows:Vector.<TimeScaleRow> = this.rows;
-            var dates:Vector.<Date> = this.validationDates;
             var i:uint;
             while (i < rows.length)
             {
                 row = rows[i];
                 setting = this.rowIndexToSetting(i, element.settings);
-                width = this.measureLabelRequirement(setting, row, dates) + this.measureTickRequirement(row);
+                width = 20;//this.measureLabelRequirement(setting, row, dates) + this.measureTickRequirement(row);
                 milliseconds = this.getProjectedTime(setting);
                 millisecondsPerPixel = milliseconds / width;
                 if (i == 0 || millisecondsPerPixel < minMillisecondsPerPixel)
@@ -369,13 +287,6 @@
             return this.timeController.getProjectedTimeForUnit(setting.unit, setting.steps);
         }
 
-		/**
-		 * 取settings里面的元素TimeScaleRowSetting 
-		 * @param index
-		 * @param settings
-		 * @return 
-		 * 
-		 */		
         protected function rowIndexToSetting(index:uint, settings:Vector.<TimeScaleRowSetting>):TimeScaleRowSetting
         {
             if (index >= settings.length)
@@ -385,15 +296,15 @@
             return settings[index];
         }
 
-        protected function measureLabelRequirement(setting:TimeScaleRowSetting, row:TimeScaleRow, dates:Vector.<Date>):Number
+        protected function measureLabelRequirement(setting:TimeScaleRowSetting, row:TimeScaleRow, dates:Vector.<Number>):Number
         {
-            var d:Date;
+            var d:Number;
             var width:Number;
             var minWidth:Number = 0;
             var first:Boolean = true;
             for each (d in dates)
             {
-                width = row.getMeasuredLabelWidthForDate(d, setting.formatString, setting.unit, setting.steps);
+                width = row.getMeasuredLabelWidthForDate(d, setting.unit, setting.steps);
                 if (first)
                 {
                     first = false;
@@ -418,7 +329,7 @@
         protected function compareElements(e1:TimeScaleRowConfigurationPolicyElement, e2:TimeScaleRowConfigurationPolicyElement):int
         {
             var settings1:Vector.<TimeScaleRowSetting> = e1.settings;
-            var settings2:Vector.<TimeScaleRowSetting> = e2.settings; 
+            var settings2:Vector.<TimeScaleRowSetting> = e2.settings;
             var setting1:TimeScaleRowSetting = settings1[(settings1.length - 1)];
             var setting2:TimeScaleRowSetting = settings2[(settings2.length - 1)];
             var testMilliseconds:int = TimeScaleRowSetting.compareMilliseconds(setting1, setting2);

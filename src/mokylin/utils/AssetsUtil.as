@@ -3,13 +3,28 @@
     [ExcludeClass]
     public class AssetsUtil 
     {
-        public static const INVALID_ACTION_CURSOR:Class = AssetsUtil_INVALID_ACTION_CURSOR;
-        public static const MOVE_ITEM_CURSOR:Class = AssetsUtil_MOVE_ITEM_CURSOR;
-        public static const MOVE_ITEM_HORIZONTAL_CURSOR:Class = AssetsUtil_MOVE_ITEM_HORIZONTAL_CURSOR;
-        public static const MOVE_ITEM_VERTICAL_CURSOR:Class = AssetsUtil_MOVE_ITEM_VERTICAL_CURSOR;
-        public static const PAN_CURSOR:Class = AssetsUtil_PAN_CURSOR;
-        public static const PAN_HORIZONTAL_CURSOR:Class = AssetsUtil_PAN_HORIZONTAL_CURSOR;
-        public static const RESIZE_ITEM_HORIZONTAL_CURSOR:Class = AssetsUtil_RESIZE_ITEM_HORIZONTAL_CURSOR;
-        public static const RESIZE_ITEM_VERTICAL_CURSOR:Class = AssetsUtil_RESIZE_ITEM_VERTICAL_CURSOR;
+		[Embed(source="assets/AssetsUtil_INVALID_ACTION_CURSOR.png")]
+        public static const INVALID_ACTION_CURSOR:Class;
+		
+		[Embed(source="assets/AssetsUtil_MOVE_ITEM_CURSOR.png")]
+        public static const MOVE_ITEM_CURSOR:Class;
+		
+		[Embed(source="assets/AssetsUtil_MOVE_ITEM_HORIZONTAL_CURSOR.png")]
+        public static const MOVE_ITEM_HORIZONTAL_CURSOR:Class;
+		
+		[Embed(source="assets/AssetsUtil_MOVE_ITEM_VERTICAL_CURSOR.png")]
+        public static const MOVE_ITEM_VERTICAL_CURSOR:Class;
+		
+		[Embed(source="assets/AssetsUtil_PAN_CURSOR.png")]
+        public static const PAN_CURSOR:Class;
+		
+		[Embed(source="assets/AssetsUtil_PAN_HORIZONTAL_CURSOR.png")]
+        public static const PAN_HORIZONTAL_CURSOR:Class;
+		
+		[Embed(source="assets/AssetsUtil_RESIZE_ITEM_HORIZONTAL_CURSOR.png")]
+        public static const RESIZE_ITEM_HORIZONTAL_CURSOR:Class;
+		
+		[Embed(source="assets/AssetsUtil_RESIZE_ITEM_VERTICAL_CURSOR.png")]
+        public static const RESIZE_ITEM_VERTICAL_CURSOR:Class;
     }
 }

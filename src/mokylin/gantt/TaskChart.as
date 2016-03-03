@@ -544,7 +544,7 @@
         {
         }
 
-        override public  function getVisibleTaskItems(rowItem:Object, start:Date, end:Date):Array
+        override public  function getVisibleTaskItems(rowItem:Object, start:Number, end:Number):Array
         {
             var item:Object;
             var taskItem:TaskItem;

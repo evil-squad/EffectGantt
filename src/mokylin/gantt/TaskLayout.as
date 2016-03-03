@@ -298,7 +298,7 @@
             var minRowHeight:Number;
             var overlap:Number;
             rowLayoutInfo.minHeight = NaN;
-            if (!(this.ganttSheet.rowController.variableRowHeight))
+            if (!(this.ganttSheet.rowController.variableRowHeight))//如果不允许各行有自己的高度，那么这个函数就不用执行了
             {
                 return;
             }
@@ -310,13 +310,13 @@
             var laneHeight:Number = rowLayoutInfo.minTaskHeight;
             if (this.percentOverlap == 0)
             {
-                minRowHeight = ((((this.paddingTop + this.paddingBottom) + 1) + (rowLayoutInfo.laneCount * laneHeight)) + ((rowLayoutInfo.laneCount - 1) * (this.verticalGap + 1)));
+                minRowHeight = (this.paddingTop + this.paddingBottom) + 1 + rowLayoutInfo.laneCount * laneHeight + (rowLayoutInfo.laneCount - 1) * (this.verticalGap + 1);
             }
             else
             {
-                overlap = ((laneHeight * this.percentOverlap) / 100);
+                overlap = (laneHeight * this.percentOverlap) / 100;
                 minRowHeight = ((((this.paddingTop + this.paddingBottom) + 1) + (rowLayoutInfo.laneCount * laneHeight)) - ((rowLayoutInfo.laneCount - 1) * overlap));
-            };
+            }
             rowLayoutInfo.minHeight = minRowHeight;
         }
 
@@ -330,18 +330,18 @@
         {
             var t:TaskItem;
             var tasks:Array = this.ganttSheet.rowItemToTasks(rowLayoutInfo.item);
-            if ((((tasks == null)) || ((tasks.length == 0))))
+            if (tasks == null || tasks.length == 0)
             {
                 rowLayoutInfo.laneCount = 0;
                 return;
-            };
+            }
             var lanes:Vector.<Vector.<TaskItem>> = new Vector.<Vector.<TaskItem>>();
             var taskItems:Vector.<TaskItem> = this.getTaskItemsForTasks(tasks);
             taskItems.sort(this.compareStartAndDuration);
             for each (t in taskItems)
             {
                 this.distributeOneTaskInLane(t, lanes);
-            };
+            }
             rowLayoutInfo.laneCount = lanes.length;
         }
 
@@ -352,7 +352,7 @@
             {
                 taskLayoutInfo.laneIndex = 0;
                 return;
-            };
+            }
             var i:uint;
             while (i < lanes.length)
             {
@@ -360,9 +360,9 @@
                 {
                     taskLayoutInfo.laneIndex = i;
                     return;
-                };
+                }
                 i++;
-            };
+            }
             var newLane:Vector.<TaskItem> = new Vector.<TaskItem>();
             newLane.push(taskItem);
             lanes.push(newLane);
@@ -372,12 +372,12 @@
         private function addTaskToLaneIfPossible(taskItem:TaskItem, lane:Vector.<TaskItem>):Boolean
         {
             var t:TaskItem = lane[(lane.length - 1)];
-            if (taskItem.startTime.time >= t.endTime.time)
+            if (taskItem.startTime >= t.endTime)
             {
                 lane.push(taskItem);
-                return (true);
-            };
-            return (false);
+                return true;
+            }
+            return false;
         }
 
         private function measureTasksOfRow(rowLayoutInfo:RowLayoutInfo):void
@@ -394,8 +394,8 @@
                 renderer = this.getMeasuringRenderer(taskItem);
                 this.prepareRenderer(renderer, taskItem);
                 measuredMinHeight = this.getExplicitOrMeasuredMinHeight(renderer);
-                maxMeasuredMinHeight = ((isNaN(maxMeasuredMinHeight)) ? (measuredMinHeight) : (Math.max(maxMeasuredMinHeight, measuredMinHeight)));
-            };
+                maxMeasuredMinHeight = isNaN(maxMeasuredMinHeight) ? (measuredMinHeight) : Math.max(maxMeasuredMinHeight, measuredMinHeight);
+            }
             this.recycleMeasuringRenderer();
             rowLayoutInfo.minTaskHeight = maxMeasuredMinHeight;
         }
@@ -408,9 +408,9 @@
                 if (this._measuringRenderer)
                 {
                     this._measuringRenderer.visible = false;
-                };
-            };
-            return (this._measuringRenderer);
+                }
+            }
+            return this._measuringRenderer;
         }
 
         private function recycleMeasuringRenderer():void
@@ -418,40 +418,40 @@
             if (this._measuringRenderer == null)
             {
                 return;
-            };
+            }
             this.ganttSheet.taskItemContainer.recycleRenderer(DisplayObject(this._measuringRenderer));
             this._measuringRenderer = null;
         }
 
         private function prepareRenderer(renderer:Object, item:TaskItem):void
         {
-            if ((renderer is ISimpleStyleClient))
+            if (renderer is ISimpleStyleClient)
             {
                 ISimpleStyleClient(renderer).styleName = this.ganttSheet.itemToStyleName(item);
-            };
-            if ((renderer is IDataRenderer))
+            }
+            if (renderer is IDataRenderer)
             {
                 IDataRenderer(renderer).data = item;
-            };
-            if ((renderer is ILayoutManagerClient))
+            }
+            if (renderer is ILayoutManagerClient)
             {
                 LayoutManager.getInstance().validateClient(ILayoutManagerClient(renderer), true);
-            };
+            }
         }
 
         private function getExplicitOrMeasuredMinHeight(r:Object):Number
         {
             var c:IUIComponent;
-            if ((r is IUIComponent))
+            if (r is IUIComponent)
             {
                 c = IUIComponent(r);
-                return (((!(isNaN(c.explicitMinHeight))) ? c.explicitMinHeight : c.measuredMinHeight));
-            };
-            if ((r is IFlexDisplayObject))
+                return !isNaN(c.explicitMinHeight) ? c.explicitMinHeight : c.measuredMinHeight;
+            }
+            if (r is IFlexDisplayObject)
             {
-                return (IFlexDisplayObject(r).measuredHeight);
-            };
-            return (NaN);
+                return IFlexDisplayObject(r).measuredHeight;
+            }
+            return NaN;
         }
 
         public function calculateTaskLayout(taskLayoutInfo:TaskLayoutInfo, rowLayoutInfo:RowLayoutInfo):void
@@ -464,7 +464,7 @@
             {
                 taskLayoutInfo.y = this.paddingTop;
                 return;
-            };
+            }
             if (this.percentOverlap == 0)
             {
                 taskLayoutInfo.y = (this.paddingTop + (taskLayoutInfo.laneIndex * ((laneHeight + this.verticalGap) + 1)));
@@ -473,7 +473,7 @@
             {
                 overlap = ((laneHeight * this.percentOverlap) / 100);
                 taskLayoutInfo.y = (this.paddingTop + (taskLayoutInfo.laneIndex * (laneHeight - overlap)));
-            };
+            }
         }
 
         private function validateLaneHeight(rowLayoutInfo:RowLayoutInfo):void
@@ -481,7 +481,7 @@
             if (isNaN(rowLayoutInfo.laneHeight))
             {
                 this.calculateLaneHeight(rowLayoutInfo);
-            };
+            }
         }
 
         private function calculateLaneHeight(rowLayoutInfo:RowLayoutInfo):void
@@ -493,31 +493,28 @@
             {
                 laneHeight = rowContentHeight;
             }
-            else
-            {
-                if (this.percentOverlap == 0)
-                {
-                    laneHeight = ((rowContentHeight - ((laneCount - 1) * (this.verticalGap + 1))) / laneCount);
-                }
-                else
-                {
-                    laneHeight = (rowContentHeight / (laneCount - (((laneCount - 1) * this.percentOverlap) / 100)));
-                };
-            };
+            else if (this.percentOverlap == 0)
+			{
+				laneHeight = ((rowContentHeight - ((laneCount - 1) * (this.verticalGap + 1))) / laneCount);
+			}
+			else
+			{
+				laneHeight = (rowContentHeight / (laneCount - (((laneCount - 1) * this.percentOverlap) / 100)));
+			}
             rowLayoutInfo.laneHeight = laneHeight;
         }
 
         private function itemToUID(item:Object):String
         {
-            return (this.ganttSheet.itemToUID(item));
+            return this.ganttSheet.itemToUID(item);
         }
 
         public function compareStartAndDuration(a:TaskItem, b:TaskItem):int
         {
-            var r:Number = (a.startTime.time - b.startTime.time);
+            var r:Number = (a.startTime - b.startTime);
             if (r == 0)
             {
-                r = b.endTime.time - a.endTime.time;
+                r = b.endTime - a.endTime;
             }
             return MathUtil.sign(r);
         }
@@ -529,7 +526,7 @@
             var r:Number = (aLayoutInfo.laneIndex - bLayoutInfo.laneIndex);
             if (r == 0)
             {
-                r = a.startTime.time - b.startTime.time;
+                r = a.startTime - b.startTime;
             }
             return MathUtil.sign(r);
         }

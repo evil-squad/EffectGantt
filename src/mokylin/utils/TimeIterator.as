@@ -11,7 +11,7 @@
     {
 
         private var _sampler:TimeSampler;
-        private var _next:Date;
+        private var _next:Number;
         private var _endReached:Boolean;
 
         public function TimeIterator(sampler:TimeSampler)
@@ -28,7 +28,7 @@
 
         public function next():Object
         {
-            var value:Date = this._next;
+            var value:Number = this._next;
             if (this._endReached)
             {
                 throw new Error(ResourceUtil.getError(ResourceUtil.ELIXIR_UTILITIES, 5, ResourceManager.getInstance(), "mokylinutils", "read.past.end"));

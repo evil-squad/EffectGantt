@@ -2,6 +2,7 @@
 {
     import flash.display.DisplayObject;
     import flash.display.Graphics;
+    import flash.display.Sprite;
     import flash.events.Event;
     import flash.events.KeyboardEvent;
     import flash.events.MouseEvent;
@@ -56,15 +57,14 @@
     import mokylin.SelectionMode;
     import mokylin.core.DataItem;
     import mokylin.gantt.supportClasses.PendingToolTipInfo;
-    import mokylin.utils.CLDRDateFormatter;
+    import mokylin.utils.AssetsUtil;
     import mokylin.utils.CSSUtil;
     import mokylin.utils.Cursor;
     import mokylin.utils.DataUtil;
     import mokylin.utils.EventUtil;
-    import mokylin.utils.GregorianCalendar;
+    import mokylin.utils.TimeComputer;
     import mokylin.utils.TimeUnit;
     import mokylin.utils.TimeUtil;
-    import mokylin.utils.WorkCalendar;
 
     [ResourceBundle("mokylingantt")]
     [Event(name="autoScroll", type="mokylin.gantt.GanttSheetEvent")]
@@ -126,10 +126,13 @@
     [Style(name="autoScrollYThreshold", type="Number", inherit="no")]
     [Style(name="autoScrollXMaximum", type="Number", inherit="no")]
     [Style(name="autoScrollYMaximum", type="Number", inherit="no")]
+	/**
+	 *  
+	 */	
     public class GanttSheet extends UIComponent 
     {
-
-        private static const CREATE_CONSTRAINT_CURSOR:Class = GanttSheet_CREATE_CONSTRAINT_CURSOR;
+		[Embed(source="assets/GanttSheet_CREATE_CONSTRAINT_CURSOR.png")]
+        private static const CREATE_CONSTRAINT_CURSOR:Class;
         private static const CLIPPING_RENDERER_MARGIN:Number = 2000;
         private static const AUTOSCROLL_REPEAT_INTERVAL:Number = 100;
         private static const AUTOSCROLL_X_MAX:Number = 40;
@@ -139,7 +142,7 @@
         private static const EDIT_BEGIN_DRAG_X_THRESHOLD:Number = 4;
         private static const EDIT_BEGIN_DRAG_Y_THRESHOLD:Number = 10;
         private static const EDIT_DRAG_TARGET_Y_THRESHOLD:Number = 6;
-        private static const EXTREMITY_AREA_X_EXTENT:Number = 6;
+        private static const EXTREMITY_AREA_X_EXTENT:Number = 10;//n. 极端-区域-X-n. 程度；范围；长度
         private static const PANNING_THRESHOLD:Number = 3;
         private static const TOOLTIP_Y_OFFSET:Number = 4;
         private static const TOOLTIP_X_OFFSET:Number = 4;
@@ -212,30 +215,6 @@
 		{
             "unit":TimeUnit.SECOND,
             "steps":30
-        }, 
-		{
-            "unit":TimeUnit.MINUTE,
-            "steps":1
-        }, 
-		{
-            "unit":TimeUnit.MINUTE,
-            "steps":5
-        },
-		{
-            "unit":TimeUnit.MINUTE,
-            "steps":10
-        }, 
-		{
-            "unit":TimeUnit.MINUTE,
-            "steps":15
-        }, 
-		{
-            "unit":TimeUnit.MINUTE,
-            "steps":20
-        },
-		{
-            "unit":TimeUnit.MINUTE,
-            "steps":30
         }];
 
         private var _pendingToolTipInfo:PendingToolTipInfo;
@@ -243,8 +222,8 @@
         private var _draggingHorizontalScrollBar:Boolean;
         private var _updatingVerticalScrollBar:Boolean;
         private var _draggingVerticalScrollBar:Boolean;
-        private var _tasksIntervalStart:Date;
-        private var _tasksIntervalEnd:Date;
+        private var _tasksIntervalStart:Number;
+        private var _tasksIntervalEnd:Number;
         private var _rowHeightChanged:Boolean;
         private var _autoScrollOffset:Point;
         private var _autoScrollPoint:Point;
@@ -267,7 +246,7 @@
         private var _isMouseDown:Boolean;
         private var _isCtrlMouseDown:Boolean;
         private var _mouseDownVerticalOffset:Number;
-        private var _mouseDownTime:Date;
+        private var _mouseDownTime:Number;
         private var _isDragging:Boolean;
         private var _isCreatingConstraint:Boolean;
         private var _isDraggingSet:Boolean;
@@ -293,9 +272,10 @@
         private var _dragInitialEndX:Number;
         private var _editingToolTip:IToolTip;
         private var _currentDataTip:IToolTip;
-        private var _toolTipDateFormatter:CLDRDateFormatter;
+//        private var _toolTipDateFormatter:CLDRDateFormatter;
         private var _minorTimeScalePrecisionChanged:Boolean;
         private var _visibleTimeRangeChanged:Boolean;
+		private var _visibleNowTimeChanged:Boolean;
         private var _inStopDragging:Boolean;
         private var _tooltipTaskFormat:String;
         private var _tooltipMilestoneFormat:String;
@@ -315,7 +295,7 @@
         private var _tooltipDurationZeroText:String;
         private var _animatedRenderers:Array;
         private var _lastPanningPosition:Point;
-        private var _timeBeforePanning:Date;
+        private var _timeBeforePanning:Number;
         private var _verticalScrollBarValueBeforePanning:Number;
         private var _verticalScrollRemainder:Number = 0;
         private var _constraintsCache:ConstraintsCache;
@@ -345,7 +325,8 @@
         private var _reassignModifierKey:String = "none";
         private var _autoResizeSummary:Boolean;
         private var _autoScrollEnabled:Boolean = true;
-        private var _calendar:GregorianCalendar;
+//        private var _calendar:GregorianCalendar;
+		private var _timeComputer:TimeComputer;
         private var _calendarChanged:Boolean;
         private var _commitItemFunction:Function;
         private var _constraintCollection:ICollectionView;
@@ -365,15 +346,24 @@
         private var _ganttChartChanged:Boolean;
         private var _taskItemContainer:GanttSheetTaskContainer;
         public var liveScrolling:Boolean = true;
-        private var _minScrollTime:Date;
+        private var _minScrollTime:Number=0;
+		private var _maxScrollTime:Number=TimeUnit.HOUR.milliseconds;
         private var _timeBoundsChanged:Boolean;
-        private var _maxScrollTime:Date;
-        private var _explicitMaxVisibleTime:Date;
+        
+        private var _explicitMaxVisibleTime:Number;
         private var _explicitMaxVisibleTimeChanged:Boolean;
+		private var _explicitMinZoomFactor:Number;
         private var _explicitMaxZoomFactor:Number;
-        private var _explicitMinVisibleTime:Date;
+        private var _explicitMinVisibleTime:Number;
         private var _explicitMinVisibleTimeChanged:Boolean;
-        private var _explicitMinZoomFactor:Number;
+		
+		private var _explicitVisibleTimeRangeEnd:Number;
+		private var _explicitVisibleTimeRangeEndChanged:Boolean;
+		private var _explicitVisibleTimeRangeStart:Number;
+		private var _explicitVisibleTimeRangeStartChanged:Boolean;
+		private var _explicitZoomFactor:Number;
+		private var _explicitZoomFactorChanged:Boolean;
+        
         private var _panMode:String = "verticalAndHorizontal";
         private var _panModifierKey:String = "none";
         private var _moveEnabled:Boolean = true;
@@ -398,7 +388,7 @@
         private var _showEditingTips:Boolean = true;
         private var _showHorizontalGridLines:Boolean;
         private var _showTimeGrid:Boolean = true;
-        private var _showWorkingTimesGrid:Boolean = true;
+        private var _showWorkingTimesGrid:Boolean = false;
         private var _explicitSnappingTimePrecision:Object;
         private var _taskChart:TaskChart;
         private var _taskCollection:ICollectionView;
@@ -411,14 +401,8 @@
         private var _timeControllerChanged:Boolean;
         private var _timeGrid:TimeGrid;
         private var _timeScale:TimeScale;
-        private var _explicitVisibleTimeRangeEnd:Date;
-        private var _explicitVisibleTimeRangeEndChanged:Boolean;
-        private var _explicitVisibleTimeRangeStart:Date;
-        private var _explicitVisibleTimeRangeStartChanged:Boolean;
-        private var _workCalendar:WorkCalendar;
-        private var _workingTimesGrid:WorkingTimesGrid;
-        private var _explicitZoomFactor:Number;
-        private var _explicitZoomFactorChanged:Boolean;
+		private var _thumbLine:Sprite;
+		
         private var _timeRectangle:Rectangle;
         private var _timeRectangleChanged:Boolean;
         private var _reassignAllowedWhileDragging:Boolean;
@@ -435,14 +419,14 @@
             this._taskItemRenderer = new ClassFactory(TaskItemRenderer);
             super();
             this.timeController = new TimeController();
-            this.workCalendar = WorkCalendar.STANDARD;
+			
             this.initializeDefaultGrids();
             this._itemAreaInfo = this.initItemAreaInfo();
             this._panCursor = new Cursor(this, "panCursor");
             this._createConstraintCursor = new Cursor(this, "createConstraintCursor");
             this._invalidReassignCursor = new Cursor(this, "invalidReassignCursor", "invalidReassignCursorOffset");
-            this._toolTipDateFormatter = new CLDRDateFormatter();
-            this._toolTipDateFormatter.formatString = this._tooltipDateFormat;
+            /*this._toolTipDateFormatter = new CLDRDateFormatter();
+            this._toolTipDateFormatter.formatString = this._tooltipDateFormat;*/
             this._taskLayout = new TaskLayout();
             this._taskLayout.ganttSheet = this;
             doubleClickEnabled = true;
@@ -492,23 +476,23 @@
                 this.createConstraintLineThickness = 1;
                 this.easingFunction = Linear.easeIn;
                 this.horizontalGridLineColor = 0xC9C9C9;
-//                this.invalidReassignCursor = AssetsUtil.INVALID_ACTION_CURSOR;
-//                this.moveCursor = AssetsUtil.MOVE_ITEM_HORIZONTAL_CURSOR;
+                this.invalidReassignCursor = AssetsUtil.INVALID_ACTION_CURSOR;
+                this.moveCursor = AssetsUtil.MOVE_ITEM_HORIZONTAL_CURSOR;
                 this.moveCursorOffset = undefined;
-//                this.moveReassignCursor = AssetsUtil.MOVE_ITEM_CURSOR;
+                this.moveReassignCursor = AssetsUtil.MOVE_ITEM_CURSOR;
                 this.moveReassignCursorOffset = undefined;
                 this.nonWorkingAlpha = 0.6;
                 this.nonWorkingColor = 0xF0F0F0;
                 this.paddingBottom = 2;
                 this.paddingTop = 2;
-//                this.panCursor = AssetsUtil.PAN_CURSOR;
+                this.panCursor = AssetsUtil.PAN_CURSOR;
                 this.percentOverlap = 60;
-//                this.reassignCursor = AssetsUtil.MOVE_ITEM_VERTICAL_CURSOR;
+                this.reassignCursor = AssetsUtil.MOVE_ITEM_VERTICAL_CURSOR;
                 this.reassignCursorOffset = undefined;
                 this.reassignXThreshold = 30;
-//                this.resizeEndCursor = AssetsUtil.RESIZE_ITEM_HORIZONTAL_CURSOR;
+                this.resizeEndCursor = AssetsUtil.RESIZE_ITEM_HORIZONTAL_CURSOR;
                 this.resizeEndCursorOffset = undefined;
-//                this.resizeStartCursor = AssetsUtil.RESIZE_ITEM_HORIZONTAL_CURSOR;
+                this.resizeStartCursor = AssetsUtil.RESIZE_ITEM_HORIZONTAL_CURSOR;
                 this.resizeStartCursorOffset = undefined;
                 this.rowPadding = undefined;
                 this.scrollMargin = 20;
@@ -789,35 +773,36 @@
             }
         }
 
-        public function get calendar():GregorianCalendar
+        public function get timeComputer():TimeComputer
         {
-            if (!this._calendar)
+            if (!this._timeComputer)
             {
-                this.setCalendar(new GregorianCalendar());
+                this.setTimeComputer(new TimeComputer());
             }
-            return this._calendar;
+            return this._timeComputer;
         }
 
-		public function setCalendar(value:GregorianCalendar):void
+		public function setTimeComputer(value:TimeComputer):void
         {
             if (!value)
             {
-                value = new GregorianCalendar();
+                value = new TimeComputer();
             }
-            if (value == this._calendar)
+            if (value == this._timeComputer)
             {
                 return;
             }
-            if (this._calendar != null)
+			this._timeComputer = value;
+            /*if (this._timeComputer != null)
             {
-                this._calendar.removeEventListener(Event.CHANGE, this.calendar_changeHandler);
+                this._timeComputer.removeEventListener(Event.CHANGE, this.calendar_changeHandler);
             }
-            this._calendar = value;
-            if (this._calendar != null)
+            this._timeComputer = value;
+            if (this._timeComputer != null)
             {
-                this._calendar.addEventListener(Event.CHANGE, this.calendar_changeHandler, false, 0, true);
+                this._timeComputer.addEventListener(Event.CHANGE, this.calendar_changeHandler, false, 0, true);
             }
-            this._calendarChanged = true;
+            this._calendarChanged = true;*/
             invalidateProperties();
         }
 
@@ -967,7 +952,7 @@
             }
         }
 
-        [Bindable("hideNonworkingTimesChanged")]
+       /* [Bindable("hideNonworkingTimesChanged")]
         [Inspectable(category="General")]
         public function get hideNonworkingTimes():Boolean
         {
@@ -990,7 +975,7 @@
                 this.timeController.hideNonworkingTimes = value;
             }
             dispatchEvent(new Event("hideNonworkingTimesChanged"));
-        }
+        }*/
 
         [Bindable("horizontalScrollPolicyChanged")]
         [Inspectable(enumeration="off,on", defaultValue="on")]
@@ -1080,45 +1065,45 @@
 
         [Bindable("minScrollTimeChanged")]
         [Inspectable(category="General")]
-        public function get minScrollTime():Date
+        public function get minScrollTime():Number
         {
             this.validateTasksInterval();
-            return this._minScrollTime != null ? new Date(this._minScrollTime.time) : new Date(this._tasksIntervalStart);
+            return this._minScrollTime != 0 ? this._minScrollTime : this._tasksIntervalStart;
         }
 
-        public function set minScrollTime(value:Date):void
+        public function set minScrollTime(value:Number):void
         {
-            if((value != null && this._minScrollTime != null && value.time == this._minScrollTime.time) || (value == null && this._minScrollTime == null))
+            if((value != 0 && this._minScrollTime != 0 && value == this._minScrollTime) || (value == 0 && this._minScrollTime == 0))
             {
                 return;
             }
-            this._minScrollTime = value != null ? new Date(value.time) : null;
+            this._minScrollTime = value;
             this.invalidateTimeBounds();
             dispatchEvent(new Event("minScrollTimeChanged"));
         }
 
         [Bindable("maxScrollTimeChanged")]
         [Inspectable(category="General")]
-        public function get maxScrollTime():Date
+        public function get maxScrollTime():Number
         {
             this.validateTasksInterval();
-            return this._maxScrollTime != null ? new Date(this._maxScrollTime.time) : new Date(this._tasksIntervalEnd);
+            return this._maxScrollTime != 0 ? this._maxScrollTime : this._tasksIntervalEnd;
         }
 
-        public function set maxScrollTime(value:Date):void
+        public function set maxScrollTime(value:Number):void
         {
-            if ((value != null && this._maxScrollTime != null && value.time == this._maxScrollTime.time) || (value == null && this._maxScrollTime == null))
+            if ((value != 0 && this._maxScrollTime != 0 && value == this._maxScrollTime) || (value == 0 && this._maxScrollTime == 0))
             {
                 return;
             }
-            this._maxScrollTime = value != null ? new Date(value.time) : null;
+            this._maxScrollTime = value;
             this.invalidateTimeBounds();
             dispatchEvent(new Event("maxScrollTimeChanged"));
         }
 
         [Bindable("maxVisibleTimeChanged")]
         [Inspectable(category="General")]
-        public function get maxVisibleTime():Date
+        public function get maxVisibleTime():Number
         {
             if (this._explicitMaxVisibleTimeChanged)
             {
@@ -1131,7 +1116,7 @@
             return TimeUtil.MAXIMUM_DATE;
         }
 
-        public function set maxVisibleTime(value:Date):void
+        public function set maxVisibleTime(value:Number):void
         {
             this._explicitMaxVisibleTime = value;
             this._explicitMaxVisibleTimeChanged = true;
@@ -1161,7 +1146,7 @@
 
         [Bindable("minVisibleTimeChanged")]
         [Inspectable(category="General")]
-        public function get minVisibleTime():Date
+        public function get minVisibleTime():Number
         {
             if (this._explicitMinVisibleTimeChanged)
             {
@@ -1174,7 +1159,7 @@
             return TimeUtil.MINIMUM_DATE;
         }
 
-        public function set minVisibleTime(value:Date):void
+        public function set minVisibleTime(value:Number):void
         {
             this._explicitMinVisibleTime = value;
             this._explicitMinVisibleTimeChanged = true;
@@ -1414,10 +1399,10 @@
                 {
                     this._allGrids.push(this.backgroundGrid);
                 }
-                if (this._showWorkingTimesGrid)
+                /*if (this._showWorkingTimesGrid)
                 {
                     this._allGrids.push(this.workingTimesGrid);
-                }
+                }*/
                 if (this._showTimeGrid)
                 {
                     this._allGrids.push(this.timeGrid);
@@ -1631,9 +1616,9 @@
             dispatchEvent(new Event("snappingTimePrecisionChanged"));
         }
 
-        public function snapTime(value:Date):Date
+        public function snapTime(value:Number):Number
         {
-            return this.calendar.round(value, this.snappingTimePrecision.unit, this.snappingTimePrecision.steps, (this.snappingTimePrecision.referenceDate as Date));
+            return this.timeComputer.round(value, this.snappingTimePrecision.unit, this.snappingTimePrecision.steps);
         }
 
         [Inspectable(environment="none")]
@@ -1759,6 +1744,7 @@
             }
             if (this._timeController)
             {
+				this._timeController.removeEventListener(GanttSheetEvent.VISIBLE_NOW_TIME_CHANGE, this.timeController_visibleNowTimeChangeHandler);
                 this._timeController.removeEventListener(GanttSheetEvent.VISIBLE_TIME_RANGE_CHANGE, this.timeController_visibleTimeRangeChangeHandler);
             }
             this._timeController = value;
@@ -1785,6 +1771,7 @@
 					this._timeController.setTimeBounds(this._timeController.minimumTime, this._explicitMaxVisibleTime);
 				}
                 this._timeController.addEventListener(GanttSheetEvent.VISIBLE_TIME_RANGE_CHANGE, this.timeController_visibleTimeRangeChangeHandler);
+				this._timeController.addEventListener(GanttSheetEvent.VISIBLE_NOW_TIME_CHANGE, this.timeController_visibleNowTimeChangeHandler);
             }
             this._timeControllerChanged = true;
             invalidateProperties();
@@ -1830,6 +1817,7 @@
             this._timeScale = value;
             if (this._timeScale)
             {
+				this._thumbLine.visible = this._timeScale.showThumb;
                 if (this._timeScale.initialized)
                 {
                     this.startListeningOnTimeScaleChanges();
@@ -1843,7 +1831,7 @@
 
         [Bindable("visibleTimeRangeChange")]
         [Inspectable(category="General")]
-        public function get visibleTimeRangeEnd():Date
+        public function get visibleTimeRangeEnd():Number
         {
             if (this._timeController && this._timeController.configured)
             {
@@ -1856,9 +1844,9 @@
             return this.maxVisibleTime;
         }
 
-        public function set visibleTimeRangeEnd(value:Date):void
+        public function set visibleTimeRangeEnd(value:Number):void
         {
-            if (value == null || value.time == this.visibleTimeRangeEnd.time)
+            if (value == 0 || value == this.visibleTimeRangeEnd)
             {
                 return;
             }
@@ -1869,7 +1857,7 @@
 
         [Bindable("visibleTimeRangeChange")]
         [Inspectable(category="General")]
-        public function get visibleTimeRangeStart():Date
+        public function get visibleTimeRangeStart():Number
         {
             if (this._timeController && this._timeController.configured)
             {
@@ -1882,66 +1870,15 @@
             return this.minVisibleTime;
         }
 
-        public function set visibleTimeRangeStart(value:Date):void
+        public function set visibleTimeRangeStart(value:Number):void
         {
-            if (value == null)
+            if (value == 0)
             {
                 return;
             }
             this._explicitVisibleTimeRangeStart = value;
             this._explicitVisibleTimeRangeStartChanged = true;
             invalidateProperties();
-        }
-
-        public function get workCalendar():WorkCalendar
-        {
-            if (this._timeController != null)
-            {
-                return this._timeController.workCalendar;
-            }
-            return this._workCalendar;
-        }
-
-        public function set workCalendar(value:WorkCalendar):void
-        {
-            if (this._workCalendar == value)
-            {
-                return;
-            }
-            this._workCalendar = value;
-            if (this._timeController != null)
-            {
-                this._timeController.workCalendar = value;
-            }
-        }
-
-        [Bindable("workingTimesGridChanged")]
-        [Inspectable(category="Other")]
-        public function get workingTimesGrid():WorkingTimesGrid
-        {
-            return this._workingTimesGrid;
-        }
-
-        public function set workingTimesGrid(value:WorkingTimesGrid):void
-        {
-            if (this._workingTimesGrid == value)
-            {
-                return;
-            }
-            if (this._workingTimesGrid != null)
-            {
-                this.disconnectGrid(this._workingTimesGrid);
-            }
-            this._workingTimesGrid = value != null ? value : this.createDefaultWorkingTimesGrid();
-            if (this._workingTimesGrid != null)
-            {
-                this.connectGrid(this._workingTimesGrid);
-            }
-            if (this._showWorkingTimesGrid)
-            {
-                this.invalidateGrids();
-            }
-            dispatchEvent(new Event("workingTimesGridChanged"));
         }
 
         [Bindable("visibleTimeRangeChange")]
@@ -1973,7 +1910,7 @@
             return x == min || x == max;
         }
 
-        public function getClippedCoordinate(time:Date):Number
+        public function getClippedCoordinate(time:Number):Number
         {
             if (!initialized)
             {
@@ -1993,17 +1930,23 @@
             return x0;
         }
 
-        public function getCoordinate(time:Date):Number
+        public function getCoordinate(time:Number):Number
         {
             return initialized ? this._timeController.getCoordinate(time) : -1;
         }
 
-        public function getTime(x:Number):Date
+		/**
+		 * 根据坐标获得对应的时间值 
+		 * @param x
+		 * @return 
+		 * 
+		 */		
+        public function getTime(x:Number):Number
         {
-            return initialized ? this._timeController.getTime(x) : null;
+            return initialized ? this._timeController.getTime(x) : 0;
         }
 
-        public function moveTo(time:Date, animate:Boolean=false):void
+        public function moveTo(time:Number, animate:Boolean=false):void
         {
             if (initialized)
             {
@@ -2032,7 +1975,7 @@
             this.showTimeRange(this.minScrollTime, this.maxScrollTime, margin, animate);
         }
 
-        public function showTimeRange(start:Date, end:Date, margin:Number=-1, animate:Boolean=false):void
+        public function showTimeRange(start:Number, end:Number, margin:Number=-1, animate:Boolean=false):void
         {
             if (initialized)
             {
@@ -2057,19 +2000,19 @@
             return range;
         }
 
-		public function isTaskItemVisible(taskItem:TaskItem, start:Date, end:Date):Boolean
+		public function isTaskItemVisible(taskItem:TaskItem, start:Number, end:Number):Boolean
         {
-            var itemStart:Date = this.getVisibleStartTime(taskItem);
-            var itemEnd:Date = this.getVisibleEndTime(taskItem);
+            var itemStart:Number = this.getVisibleStartTime(taskItem);
+            var itemEnd:Number = this.getVisibleEndTime(taskItem);
             return itemStart < end && itemEnd > start;
         }
 
-		public function getVisibleStartTime(taskItem:TaskItem):Date
+		public function getVisibleStartTime(taskItem:TaskItem):Number
         {
             return this._taskVisibleTimeRangeStartFunction != null ? this._taskVisibleTimeRangeStartFunction(taskItem) : taskItem.startTime;
         }
 
-		public function getVisibleEndTime(taskItem:TaskItem):Date
+		public function getVisibleEndTime(taskItem:TaskItem):Number
         {
             return this._taskVisibleTimeRangeEndFunction != null ? this._taskVisibleTimeRangeEndFunction(taskItem) : taskItem.endTime;
         }
@@ -2085,8 +2028,8 @@
             var rangeStart:Number;
             var rangeEnd:Number;
             var taskItem:TaskItem;
-            var taskItemStart:Date;
-            var taskItemEnd:Date;
+            var taskItemStart:Number;
+            var taskItemEnd:Number;
             if (!tasks)
             {
                 return null;
@@ -2098,7 +2041,7 @@
                 taskItem = this.itemToTaskItem(cursor.current);
                 taskItemStart = this.getVisibleStartTime(taskItem);
                 taskItemEnd = this.getVisibleEndTime(taskItem);
-                if (isNaN(taskItemStart.time) || isNaN(taskItemEnd.time))
+                if (isNaN(taskItemStart) || isNaN(taskItemEnd))
                 {
                 }
                 else
@@ -2106,18 +2049,18 @@
                     if (first)
                     {
                         first = false;
-                        rangeStart = taskItemStart.time;
-                        rangeEnd = taskItemEnd.time;
+                        rangeStart = taskItemStart;
+                        rangeEnd = taskItemEnd;
                     }
                     else
                     {
-                        if (taskItemStart.time < rangeStart)
+                        if (taskItemStart < rangeStart)
                         {
-                            rangeStart = taskItemStart.time;
+                            rangeStart = taskItemStart;
                         }
-                        if (taskItemEnd.time > rangeEnd)
+                        if (taskItemEnd > rangeEnd)
                         {
-                            rangeEnd = taskItemEnd.time;
+                            rangeEnd = taskItemEnd;
                         }
                     }
                 }
@@ -2133,7 +2076,7 @@
             });
         }
 
-        public function zoom(ratio:Number, time:Date=null, animate:Boolean=false):void
+        public function zoom(ratio:Number, time:Number=0, animate:Boolean=false):void
         {
             if (initialized)
             {
@@ -2147,8 +2090,8 @@
             var constraintItem:ConstraintItem;
             var fromTaskItem:TaskItem;
             var toTaskItem:TaskItem;
-            var start:Date;
-            var end:Date;
+            var start:Number;
+            var end:Number;
             if (!(initialized))
             {
                 return;
@@ -2178,24 +2121,24 @@
 			}
         }
 
-        private function ensureRangeVisible(start:Date, end:Date, margin:Number=10):void
+        private function ensureRangeVisible(start:Number, end:Number, margin:Number=10):void
         {
-            var visibleStart:Date = this._timeController.startTime;
-            var visibleEnd:Date = this._timeController.endTime;
-            var visibleCenter:Number = ((visibleStart.time + visibleEnd.time) / 2);
-            var center:Number = ((start.time + end.time) / 2);
-            var visibleDuration:Number = (visibleEnd.time - visibleStart.time);
-            var animate:Boolean = (Math.abs((visibleCenter - center)) < (2 * visibleDuration));
-            var marginDuration:Number = (margin * this._timeController.zoomFactor);
-            if ((end.time - start.time) < (visibleDuration - (2 * marginDuration)))
+            var visibleStart:Number = this._timeController.startTime;
+            var visibleEnd:Number = this._timeController.endTime;
+            var visibleCenter:Number = (visibleStart + visibleEnd) / 2;
+            var center:Number = (start + end) / 2;
+            var visibleDuration:Number = visibleEnd - visibleStart;
+            var animate:Boolean = Math.abs(visibleCenter - center) < (2 * visibleDuration);
+            var marginDuration:Number = margin * this._timeController.zoomFactor;
+            if ((end - start) < (visibleDuration - (2 * marginDuration)))
             {
-                if (start.time < (visibleStart.time + marginDuration))
+                if (start < (visibleStart + marginDuration))
                 {
-                    this._timeController.moveTo(new Date((start.time - marginDuration)), animate);
+                    this._timeController.moveTo((start - marginDuration), animate);
                 }
-                else if (end.time > (visibleEnd.time - marginDuration))
+                else if (end > (visibleEnd - marginDuration))
 				{
-					this._timeController.moveTo(new Date(((visibleStart.time + (end.time - visibleEnd.time)) + marginDuration)), animate);
+					this._timeController.moveTo((visibleStart + end - visibleEnd + marginDuration), animate);
 				}
             }
             else
@@ -2276,8 +2219,8 @@
         {
             this._backgroundGrid = this.createDefaultBackgroundGrid();
             this.connectGrid(this._backgroundGrid);
-            this._workingTimesGrid = this.createDefaultWorkingTimesGrid();
-            this.connectGrid(this._workingTimesGrid);
+//            this._workingTimesGrid = this.createDefaultWorkingTimesGrid();
+//            this.connectGrid(this._workingTimesGrid);
             this._timeGrid = this.createDefaultTimeGrid();
             this.connectGrid(this._timeGrid);
         }
@@ -2347,10 +2290,10 @@
             {
                 backGrids.push(this.backgroundGrid);
             }
-            if (this._showWorkingTimesGrid)
+            /*if (this._showWorkingTimesGrid)
             {
                 backGrids.push(this.workingTimesGrid);
-            }
+            }*/
             if (this._backGrids != null)
             {
                 for each (grid in this._backGrids)
@@ -2462,12 +2405,12 @@
                 return true;
             }
             var siblings:Array = this.ganttChart.rowItemToTasks(rowItem);
-            var start:Number = taskItem.startTime.time;
-            var end:Number = taskItem.endTime.time;
+            var start:Number = taskItem.startTime;
+            var end:Number = taskItem.endTime;
             for each (task in siblings)
             {
                 other = this.itemToTaskItem(task);
-                if (other && other != taskItem && other.startTime.time < end && other.endTime.time > start)
+                if (other && other != taskItem && other.startTime < end && other.endTime > start)
                 {
                     return true;
                 }
@@ -2571,7 +2514,7 @@
             var itemText:String = taskItem.label!=null ? taskItem.label : "";
             var format:String = taskItem.isMilestone ? this._tooltipMilestoneFormat : this._tooltipTaskFormat;
             var durationZero:Boolean;
-            var duration:Number = taskItem.endTime.time - taskItem.startTime.time;
+            var duration:Number = taskItem.endTime - taskItem.startTime;
             if (duration >= TimeUnit.DAY.milliseconds)
             {
                 durationValue = Math.ceil(duration / TimeUnit.DAY.milliseconds);
@@ -2603,7 +2546,7 @@
 				durationValue = 0;
 				durationText = this._tooltipDurationZeroText;
 			}
-            return StringUtil.substitute(format, itemText, this._toolTipDateFormatter.format(taskItem.startTime), durationZero ? durationText : durationValue, durationZero ? "" : durationText, this._toolTipDateFormatter.format(taskItem.endTime));
+            return StringUtil.substitute(format, itemText, /*this._toolTipDateFormatter.format(*/taskItem.startTime/*)*/, durationZero ? durationText : durationValue, durationZero ? "" : durationText, /*this._toolTipDateFormatter.format(*/taskItem.endTime/*)*/);
         }
 
         private function constraintItemToDefaultToolTip(constraintItem:ConstraintItem):String
@@ -2809,12 +2752,12 @@
         override protected function commitProperties():void
         {
             var grid2:GanttSheetGridBase;
-            var computedMin:Date;
-            var computedMax:Date;
-            var tempVisibleTimeStart:Date;
-            var tempVisibleTimeEnd:Date;
-            var computedStart:Date;
-            var computedEnd:Date;
+            var computedMin:Number;
+            var computedMax:Number;
+            var tempVisibleTimeStart:Number;
+            var tempVisibleTimeEnd:Number;
+            var computedStart:Number;
+            var computedEnd:Number;
             var row:TimeScaleRow;
             super.commitProperties();
             this.validateTasksInterval();
@@ -2844,9 +2787,9 @@
                 this._timeControllerChanged = false;
                 if (this._timeController)
                 {
-                    this._timeController.calendar = this.calendar;
-                    this._timeController.workCalendar = this._workCalendar;
-                    this._timeController.hideNonworkingTimes = this._hideNonworkingTimes;
+                    this._timeController.timeComputer = this.timeComputer;
+                    /*this._timeController.workCalendar = this._workCalendar;
+                    this._timeController.hideNonworkingTimes = this._hideNonworkingTimes;*/
                     this.styleChanged(null);
                 }
                 for each (grid2 in this.allGrids)
@@ -2868,21 +2811,21 @@
                 this.stopDragging(GanttSheetEventReason.OTHER);
                 if (this._timeController)
                 {
-                    this._timeController.calendar = this.calendar;
+                    this._timeController.timeComputer = this.timeComputer;
                 }
             }
             if (this._resourcesChanged)
             {
                 this._resourcesChanged = false;
-                if (this._toolTipDateFormatter != null)
+                /*if (this._toolTipDateFormatter != null)
                 {
                     this._toolTipDateFormatter.formatString = this._tooltipDateFormat;
-                }
+                }*/
             }
             if (this._explicitMinVisibleTimeChanged || this._explicitMaxVisibleTimeChanged)
             {
-                computedMin = new Date(Math.min(this.minVisibleTime.time, this.maxVisibleTime.time));
-                computedMax = new Date(Math.max(this.maxVisibleTime.time, this.minVisibleTime.time));
+                computedMin = Math.min(this.minVisibleTime, this.maxVisibleTime);
+                computedMax = Math.max(this.maxVisibleTime, this.minVisibleTime);
                 this._timeController.setTimeBounds(computedMin, computedMax);
                 if (this._explicitMinVisibleTimeChanged)
                 {
@@ -2901,8 +2844,8 @@
                 {
                     tempVisibleTimeStart = this._explicitVisibleTimeRangeStartChanged ? this._explicitVisibleTimeRangeStart : this._timeController.startTime;
                     tempVisibleTimeEnd = this._explicitVisibleTimeRangeEndChanged ? this._explicitVisibleTimeRangeEnd : this._timeController.endTime;
-                    computedStart = new Date(Math.max(Math.min(tempVisibleTimeStart.time, tempVisibleTimeEnd.time), this.minVisibleTime.time));
-                    computedEnd = new Date(Math.min(Math.max(tempVisibleTimeStart.time, tempVisibleTimeEnd.time), this.maxVisibleTime.time));
+                    computedStart = Math.max(Math.min(tempVisibleTimeStart, tempVisibleTimeEnd), this.minVisibleTime);
+                    computedEnd = Math.min(Math.max(tempVisibleTimeStart, tempVisibleTimeEnd), this.maxVisibleTime);
                     this._timeController.configure(computedStart, computedEnd, this.timeRectangle.width);
                 }
                 this._explicitVisibleTimeRangeStartChanged = false;
@@ -2921,14 +2864,19 @@
                 this._visibleTimeRangeChanged = false;
                 this._computedSnappingTimePrecision = this.computeTimePrecision();
             }
+			if(_visibleNowTimeChanged)
+			{
+				_visibleNowTimeChanged = false;
+				invalidateDisplayList();
+			}
             if (this._minorTimeScalePrecisionChanged)
             {
-                this._minorTimeScalePrecisionChanged = false;
-                row = this.timeScale ? this.timeScale.minorScaleRow : null;
-                if (row != null)
-                {
-                    this.synchronizeTimeGridsWithTimeScaleRow(row);
-                }
+				this._minorTimeScalePrecisionChanged = false;
+				row = this.timeScale ? this.timeScale.minorScaleRow : null;
+				if (row != null)
+				{
+					this.synchronizeTimeGridsWithTimeScaleRow(row);
+				}
             }
             if (mustUpdateVerticalScrollBar)
             {
@@ -2962,14 +2910,14 @@
 
         private function synchronizeTimeGridsWithTimeScaleRow(row:TimeScaleRow):void
         {
-            var grid:GanttSheetGridBase;
-            for each (grid in this.allGrids)
-            {
-                if (grid is TimeGrid)
-                {
-                    TimeGrid(grid).setTimeScaleUnit(row.tickUnit, row.tickSteps);
-                }
-            }
+			var grid:GanttSheetGridBase;
+			for each (grid in this.allGrids)
+			{
+				if (grid is TimeGrid)
+				{
+					TimeGrid(grid).setTimeScaleUnit(row.tickUnit, row.tickSteps);
+				}
+			}
         }
 
         private function createDefaultBackgroundGrid():BackgroundGrid
@@ -2979,14 +2927,6 @@
             rowGrid.showHorizontalGridLines = this._showHorizontalGridLines;
             rowGrid.mouseEnabled = false;
             return rowGrid;
-        }
-
-        private function createDefaultWorkingTimesGrid():WorkingTimesGrid
-        {
-            var workGrid:WorkingTimesGrid = new WorkingTimesGrid();
-            workGrid.name = "workGrid";
-            workGrid.mouseEnabled = false;
-            return workGrid;
         }
 
         private function createDefaultTimeGrid():TimeGrid
@@ -3014,6 +2954,7 @@
                 addChild(this._maskShape);
             }
             this._maskShape.visible = false;
+			
             if (!this.horizontalScrollBar)
             {
                 this.horizontalScrollBar = new HScrollBar();
@@ -3088,6 +3029,13 @@
                 this._frontGridsContent.mouseEnabled = false;
                 this._content.addChild(this._frontGridsContent);
             }
+			if(!this._thumbLine)
+			{
+				_thumbLine = new Sprite();
+				_thumbLine.mouseEnabled = false;
+				this.addChild(_thumbLine);
+			}
+			this._thumbLine.visible = false;
             this._minorTimeScalePrecisionChanged = true;
             this._gridsChanged = true;
             this._timeBoundsChanged = true;
@@ -3121,7 +3069,7 @@
             this._tooltipConstraintStartToEndText = resourceManager.getString("mokylingantt", "tooltip.constraint.start.to.end.text");
             this._tooltipConstraintStartToStartText = resourceManager.getString("mokylingantt", "tooltip.constraint.start.to.start.text");
             this._tooltipConstraintUnknownText = resourceManager.getString("mokylingantt", "tooltip.constraint.unknown.text");
-            this._tooltipDateFormat = resourceManager.getString("mokylingantt", "tooltip.date.format");
+//            this._tooltipDateFormat = resourceManager.getString("mokylingantt", "tooltip.date.format");
             this._tooltipDurationDayText = resourceManager.getString("mokylingantt", "tooltip.duration.day.text");
             this._tooltipDurationHourText = resourceManager.getString("mokylingantt", "tooltip.duration.hour.text");
             this._tooltipDurationMinuteText = resourceManager.getString("mokylingantt", "tooltip.duration.minute.text");
@@ -3142,6 +3090,13 @@
                 this._maskShape.width = this.timeRectangle.width;
                 this._maskShape.height = this.timeRectangle.height;
             }
+			if(this._thumbLine)
+			{
+				_thumbLine.graphics.lineStyle(1,0xff0000);
+				_thumbLine.graphics.moveTo(0.5,0.5);
+				_thumbLine.graphics.lineTo(0.5,unscaledHeight);
+				_thumbLine.x = this.timeController.getCoordinate(this.timeController.nowTime);
+			}
             var sizeChanged:Boolean = unscaledWidth != this._oldUnscaledWidth || unscaledHeight != this._oldUnscaledHeight;
             if (sizeChanged)
             {
@@ -3319,7 +3274,7 @@
 
         private function get useUnboundedScrollBar():Boolean
         {
-            if (this.minScrollTime.time == this.maxScrollTime.time)
+            if (this.minScrollTime == this.maxScrollTime)
             {
                 return true;
             }
@@ -3335,16 +3290,16 @@
             return getStyle("scrollMargin");
         }
 
-        private function get minScrollTimeWithMargin():Date
+        private function get minScrollTimeWithMargin():Number
         {
-            var time:Number = (this.getTime(this.marginInPixels).time - this.getTime(0).time);
-            return new Date(this.minScrollTime.time - time);
+            var time:Number = this.getTime(this.marginInPixels) - this.getTime(0);
+            return this.minScrollTime - time;
         }
 
-        private function get maxScrollTimeWithMargin():Date
+        private function get maxScrollTimeWithMargin():Number
         {
-            var time:Number = (this.getTime(this.marginInPixels).time - this.getTime(0).time);
-            return new Date(this.maxScrollTime.time + time);
+            var time:Number = this.getTime(this.marginInPixels) - this.getTime(0);
+            return this.maxScrollTime + time;
         }
 
         private function get isHorizontalScrollBarVisible():Boolean
@@ -3354,7 +3309,7 @@
 
         private function get horizontalScrollBarHeight():Number
         {
-            if (!(this.isHorizontalScrollBarVisible))
+            if (!this.isHorizontalScrollBarVisible)
             {
                 return 0;
             }
@@ -3363,8 +3318,8 @@
 
         private function updateHorizontalScrollBar():void
         {
-            var min:Date;
-            var max:Date;
+            var min:Number;
+            var max:Number;
             var value:Number;
             if (this._updatingHorizontalScrollBar || !this._timeController.configured || !initialized || this.horizontalScrollPolicy != ScrollPolicy.ON)
             {
@@ -3410,9 +3365,9 @@
                 return;
             }
             this._updatingHorizontalScrollBar = true;
-            var min:Date = this.minScrollTimeWithMargin < this.visibleTimeRangeStart ? this.minScrollTimeWithMargin : this.visibleTimeRangeStart;
-            var date:Date = this.getTime(this.getCoordinate(min) + Math.floor(this.horizontalScrollBar.value));
-            this.moveTo(date);
+            var min:Number = this.minScrollTimeWithMargin < this.visibleTimeRangeStart ? this.minScrollTimeWithMargin : this.visibleTimeRangeStart;
+            var time:Number = this.getTime(this.getCoordinate(min) + Math.floor(this.horizontalScrollBar.value));
+            this.moveTo(time);
             this._updatingHorizontalScrollBar = false;
         }
 
@@ -3423,27 +3378,27 @@
 
 		public function scrollHorizontally(increment:Boolean, animate:Boolean=true):void
         {
-            var timeOffset:Number;
-            var coordinateOffset:Number;
-            var row:TimeScaleRow = this.timeScale != null ? this.timeScale.minorScaleRow : null;
-            if (row != null && row.tickUnit != null)
-            {
-                timeOffset = row.tickUnit.milliseconds * row.tickSteps;
-                if (!increment)
-                {
-                    timeOffset = -timeOffset;
-                }
-                this.shiftByProjectedTime(timeOffset, animate);
-            }
-            else
-            {
-                coordinateOffset = this.timeRectangle.width / 10;
-                if (!increment)
-                {
-                    coordinateOffset = -coordinateOffset;
-                }
-                this.shiftByCoordinate(coordinateOffset, animate);
-            }
+			var timeOffset:Number;
+			var coordinateOffset:Number;
+			var row:TimeScaleRow = this.timeScale != null ? this.timeScale.minorScaleRow : null;
+			if (row != null && row.tickUnit != null)
+			{
+				timeOffset = row.tickUnit.milliseconds * row.tickSteps;
+				if (!increment)
+				{
+					timeOffset = -timeOffset;
+				}
+				this.shiftByProjectedTime(timeOffset, animate);
+			}
+			else
+			{
+				coordinateOffset = this.timeRectangle.width / 10;
+				if (!increment)
+				{
+					coordinateOffset = -coordinateOffset;
+				}
+				this.shiftByCoordinate(coordinateOffset, animate);
+			}
         }
 
         private function horizontalScrollBar_thumbPressHandler(event:TrackBaseEvent):void
@@ -3676,6 +3631,14 @@
             return null;
         }
 
+		/**
+		 * 把task的对象转化为TaskItem对象 
+		 * 并存在数组里
+		 * @param item
+		 * @param create
+		 * @return 
+		 * 
+		 */		
         public function itemToTaskItem(item:Object, create:Boolean=true):TaskItem
         {
             var taskItem:TaskItem;
@@ -3813,7 +3776,7 @@
             return itemArea ? this._itemAreaInfo[itemArea] : null;
         }
 
-		public function getVisibleTaskItems(rowItem:Object, start:Date, end:Date):Array
+		public function getVisibleTaskItems(rowItem:Object, start:Number, end:Number):Array
         {
             var index:int;
             var taskItems:Array = this.ganttChart.getVisibleTaskItems(rowItem, start, end);
@@ -3903,23 +3866,23 @@
             this.startListeningOnTimeScaleChanges();
         }
 
-        private function startListeningOnTimeScaleChanges():void
-        {
-            if (this._timeScale && this._timeScale.minorScaleRow)
-            {
-                this._timeScale.minorScaleRow.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, this.precisionChangedHandler);
-                this._minorTimeScalePrecisionChanged = true;
-                invalidateProperties();
-            }
-        }
-
-        private function stopListeningOnTimeScaleChanges():void
-        {
-            if (this._timeScale && this._timeScale.minorScaleRow)
-            {
-                this._timeScale.minorScaleRow.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, this.precisionChangedHandler);
-            }
-        }
+		private function startListeningOnTimeScaleChanges():void
+		{
+			if (this._timeScale && this._timeScale.minorScaleRow)
+			{
+				this._timeScale.minorScaleRow.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, this.precisionChangedHandler);
+				this._minorTimeScalePrecisionChanged = true;
+				invalidateProperties();
+			}
+		}
+		
+		private function stopListeningOnTimeScaleChanges():void
+		{
+			if (this._timeScale && this._timeScale.minorScaleRow)
+			{
+				this._timeScale.minorScaleRow.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, this.precisionChangedHandler);
+			}
+		}
 
         private function precisionChangedHandler(event:PropertyChangeEvent):void
         {
@@ -4075,7 +4038,7 @@
             }
             else
             {
-                this.timeController.zoomAndCenter(zoomRatio, null, animate);
+                this.timeController.zoomAndCenter(zoomRatio, 0, animate);
             }
         }
 
@@ -4321,7 +4284,7 @@
             }
             if (this._isMouseDown)
             {
-                event.stopPropagation();
+                event.stopPropagation(); 
                 if (this._mouseDownItemRenderer)
                 {
                     this.itemMouseDragHandler(event);
@@ -4635,7 +4598,7 @@
         private function startPanning(point:Point):void
         {
             this._isPanning = true;
-            this._timeBeforePanning = new Date(this.visibleTimeRangeStart.time);
+            this._timeBeforePanning = this.visibleTimeRangeStart;
             this._verticalScrollBarValueBeforePanning = this.verticalScrollBar.value;
             this._lastPanningPosition = point;
             this._timeController.startAdjusting();
@@ -4769,7 +4732,7 @@
             this._editedTaskItem = null;
             this._mouseDownItemRenderer = null;
             this._mouseDownItem = null;
-            this._timeBeforePanning = null;
+            this._timeBeforePanning = 0;
             this._originalResource = null;
             this._targetResource = null;
             this._sourceTask = null;
@@ -5116,6 +5079,12 @@
                 }
             }
         }
+		
+		private function timeController_visibleNowTimeChangeHandler(event:GanttSheetEvent):void
+		{
+			_visibleNowTimeChanged = true;
+			invalidateProperties();
+		}
 
         private function timeController_visibleTimeRangeChangeHandler(event:GanttSheetEvent):void
         {
@@ -5181,103 +5150,94 @@
                 }
                 this.invalidateTaskItemsLayout(items);
             }
-            else
-            {
-                if (ce.kind == CollectionEventKind.ADD)
-                {
-                    if (this._autoResizeSummary)
-                    {
-                        if (ce.items == null || ce.items.length == 0)
-                        {
-                            this.resizeSummaryTasks();
-                        }
-                        else
-                        {
-                            for each (item in ce.items)
-                            {
-                                if (!this.resizingTaskSummaries && this._autoResizeSummary && item)
-                                {
-                                    summaries = this.getTaskSummaries(item);
-                                    taskItem = this.itemToTaskItem(item);
-                                    if (taskItem.isSummary)
-                                    {
-                                        summaries.push(taskItem);
-                                    }
-                                    this.updateTaskSummaries(summaries, true);
-                                }
-                            }
-                        }
-                    }
-                    this.invalidateItemsSize();
-                    if (this._constraintsCache)
-                    {
-                        this._constraintsCache.invalidate();
-                    }
-                }
-                else
-                {
-                    if (ce.kind == CollectionEventKind.REMOVE)
-                    {
-                        unselect = {};
-                        for each (item in ce.items)
-                        {
-                            uid = this.itemToUID(item);
-                            delete this._taskItems[uid];
-                            if (this._highlightUID == uid)
-                            {
-                                this._highlightUID = null;
-                            }
-                            if (this.isItemSelected(uid))
-                            {
-                                unselect[uid] = item;
-                            }
-                        }
-                        select = [];
-                        for (item in this._selectedItems)
-                        {
-                            if (unselect[this.itemToUID(item)] === undefined)
-                            {
-                                change = true;
-                                select.push(item);
-                            }
-                        }
-                        if (change)
-                        {
-                            this.commitSelectedItems(select);
-                        }
-                        if (!this.resizingTaskSummaries && this._autoResizeSummary)
-                        {
-                            this.resizeSummaryTasks();
-                        }
-                        if (this._constraintsCache)
-                        {
-                            this._constraintsCache.invalidate();
-                        }
-                        this.invalidateItemsSize();
-                    }
-                    else
-                    {
-                        if (ce.kind == CollectionEventKind.RESET || ce.kind == CollectionEventKind.REFRESH)
-                        {
-                            keepSelection = (ce.kind == CollectionEventKind.REFRESH);
-                            if (keepSelection)
-                            {
-                                oldSelectedItems = this.selectedItems;
-                            }
-                            this.clearTaskData();
-                            if (this._autoResizeSummary)
-                            {
-                                this.resizeSummaryTasks();
-                            }
-                            this.invalidateItemsSize();
-                            if (keepSelection)
-                            {
-                                this.selectedItems = oldSelectedItems;
-                            }
-                        }
-                    }
-                }
-            }
+            else if (ce.kind == CollectionEventKind.ADD)
+			{
+				if (this._autoResizeSummary)
+				{
+					if (ce.items == null || ce.items.length == 0)
+					{
+						this.resizeSummaryTasks();
+					}
+					else
+					{
+						for each (item in ce.items)
+						{
+							if (!this.resizingTaskSummaries && this._autoResizeSummary && item)
+							{
+								summaries = this.getTaskSummaries(item);
+								taskItem = this.itemToTaskItem(item);
+								if (taskItem.isSummary)
+								{
+									summaries.push(taskItem);
+								}
+								this.updateTaskSummaries(summaries, true);
+							}
+						}
+					}
+				}
+				this.invalidateItemsSize();
+				if (this._constraintsCache)
+				{
+					this._constraintsCache.invalidate();
+				}
+			}
+			else if (ce.kind == CollectionEventKind.REMOVE)
+			{
+				unselect = {};
+				for each (item in ce.items)
+				{
+					uid = this.itemToUID(item);
+					delete this._taskItems[uid];
+					if (this._highlightUID == uid)
+					{
+						this._highlightUID = null;
+					}
+					if (this.isItemSelected(uid))
+					{
+						unselect[uid] = item;
+					}
+				}
+				select = [];
+				for (item in this._selectedItems)
+				{
+					if (unselect[this.itemToUID(item)] === undefined)
+					{
+						change = true;
+						select.push(item);
+					}
+				}
+				if (change)
+				{
+					this.commitSelectedItems(select);
+				}
+				if (!this.resizingTaskSummaries && this._autoResizeSummary)
+				{
+					this.resizeSummaryTasks();
+				}
+				if (this._constraintsCache)
+				{
+					this._constraintsCache.invalidate();
+				}
+				this.invalidateItemsSize();
+			}
+			else  if (ce.kind == CollectionEventKind.RESET || ce.kind == CollectionEventKind.REFRESH)
+			{
+				keepSelection = (ce.kind == CollectionEventKind.REFRESH);
+				if (keepSelection)
+				{
+					oldSelectedItems = this.selectedItems;
+				}
+				this.clearTaskData();
+				if (this._autoResizeSummary)
+				{
+					this.resizeSummaryTasks();
+				}
+				this.invalidateItemsSize();
+				if (keepSelection)
+				{
+					this.selectedItems = oldSelectedItems;
+				}
+			}
             this.invalidateTasksInterval();
         }
 
@@ -5298,21 +5258,21 @@
 
         private function computeTasksInterval():void
         {
-            if (this._minScrollTime != null && this._maxScrollTime != null)
+            if (this._minScrollTime != 0 && this._maxScrollTime != 0)
             {
                 return;
             }
-            var oldStart:Date = this._tasksIntervalStart != null ? new Date(this._tasksIntervalStart.time) : null;
-            var oldEnd:Date = this._tasksIntervalEnd != null ? new Date(this._tasksIntervalEnd.time) : null;
+            var oldStart:Number = this._tasksIntervalStart;
+            var oldEnd:Number = this._tasksIntervalEnd;
             var range:Object = this._taskCollection != null ? this.getFlatTaskCollectionTimeRange(this._taskCollection) : null;
-            this._tasksIntervalStart = range != null ? range.start : new Date();
+            this._tasksIntervalStart = range != null ? range.start : 0;
             this._tasksIntervalEnd = range != null ? range.end : this._tasksIntervalStart;
-            if (oldStart == null || oldStart.time != this._tasksIntervalStart.time)
+            if (oldStart == 0 || oldStart != this._tasksIntervalStart)
             {
                 this._timeBoundsChanged = true;
                 dispatchEvent(new Event("minScrollTimeChanged"));
             }
-            if (oldEnd == null || oldEnd.time != this._tasksIntervalEnd.time)
+            if (oldEnd == 0 || oldEnd != this._tasksIntervalEnd)
             {
                 this._timeBoundsChanged = true;
                 dispatchEvent(new Event("maxScrollTimeChanged"));
@@ -5344,70 +5304,61 @@
                     }
                     this.invalidateConstraintItemsLayout(items);
                 }
-                else
-                {
-                    if (ce.kind == CollectionEventKind.ADD)
-                    {
-                        for each (item in ce.items)
-                        {
-                            this.constraintsCache.add(item);
-                        }
-                        this.invalidateConstraintItemsLayout(ce.items);
-                    }
-                    else
-                    {
-                        if (ce.kind == CollectionEventKind.REMOVE)
-                        {
-                            unselect = {};
-                            for each (item in ce.items)
-                            {
-                                this.constraintsCache.remove(item);
-                                uid = this.itemToUID(item);
-                                delete this._constraintItems[uid];
-                                if (this._highlightUID == uid)
-                                {
-                                    this._highlightUID = null;
-                                }
-                                if (this.isItemSelected(uid))
-                                {
-                                    unselect[uid] = item;
-                                }
-                            }
-                            select = [];
-                            for (item in this._selectedItems)
-                            {
-                                if (unselect[this.itemToUID(item)] === undefined)
-                                {
-                                    change = true;
-                                    select.push(item);
-                                }
-                            }
-                            if (change)
-                            {
-                                this.commitSelectedItems(select);
-                            }
-                            this.invalidateItemsSize();
-                        }
-                        else
-                        {
-                            if (ce.kind == CollectionEventKind.RESET || ce.kind == CollectionEventKind.REFRESH)
-                            {
-                                keepSelection = (ce.kind == CollectionEventKind.REFRESH);
-                                oldSelectedItems = this.selectedItems;
-                                if (keepSelection)
-                                {
-                                    oldSelectedItems = this.selectedItems;
-                                }
-                                this.clearConstraintData();
-                                this.invalidateItemsSize();
-                                if (keepSelection)
-                                {
-                                    this.selectedItems = oldSelectedItems;
-                                }
-                            }
-                        }
-                    }
-                }
+                else if (ce.kind == CollectionEventKind.ADD)
+				{
+					for each (item in ce.items)
+					{
+						this.constraintsCache.add(item);
+					}
+					this.invalidateConstraintItemsLayout(ce.items);
+				}
+				else if (ce.kind == CollectionEventKind.REMOVE)
+				{
+					unselect = {};
+					for each (item in ce.items)
+					{
+						this.constraintsCache.remove(item);
+						uid = this.itemToUID(item);
+						delete this._constraintItems[uid];
+						if (this._highlightUID == uid)
+						{
+							this._highlightUID = null;
+						}
+						if (this.isItemSelected(uid))
+						{
+							unselect[uid] = item;
+						}
+					}
+					select = [];
+					for (item in this._selectedItems)
+					{
+						if (unselect[this.itemToUID(item)] === undefined)
+						{
+							change = true;
+							select.push(item);
+						}
+					}
+					if (change)
+					{
+						this.commitSelectedItems(select);
+					}
+					this.invalidateItemsSize();
+				}
+				else if (ce.kind == CollectionEventKind.RESET || ce.kind == CollectionEventKind.REFRESH)
+				{
+					keepSelection = (ce.kind == CollectionEventKind.REFRESH);
+					oldSelectedItems = this.selectedItems;
+					if (keepSelection)
+					{
+						oldSelectedItems = this.selectedItems;
+					}
+					this.clearConstraintData();
+					this.invalidateItemsSize();
+					if (keepSelection)
+					{
+						this.selectedItems = oldSelectedItems;
+					}
+				}
             }
         }
 
@@ -5417,18 +5368,25 @@
             invalidateProperties();
         }
 
+		/**
+		 * 拖拽的过程中 
+		 * @param event
+		 * @param newMouseX
+		 * @param newMouseY
+		 * 
+		 */		
         private function dragItem(event:Event, newMouseX:Number, newMouseY:Number):void
         {
             newMouseY = (newMouseY - this._dragInitialItemMousePoint.y);
             var initialX:Number = (this._hitTestItemArea == TaskItemArea.BAR || this._hitTestItemArea == TaskItemArea.START) ? this._dragInitialStartX : this._dragInitialEndX;
-            var newTime:Date = this._timeController.getTime(initialX + newMouseX - this._mouseDownPoint.x);
+            var newTime:Number = this._timeController.getTime(initialX + newMouseX - this._mouseDownPoint.x);
             var offset:Point = new Point((newMouseX - this._mouseDownPoint.x), (newMouseY - this._mouseDownPoint.y));
             var newRowItem:Object = this.getRowItemInSnapRange(newMouseY);
             var taskItem:TaskItem = this.itemToTaskItem(this._mouseDownItem);
             var e:GanttSheetEvent = new GanttSheetEvent(GanttSheetEvent.ITEM_EDIT_DRAG, false, true);
             e.sourceResource = this._originalResource;
             e.targetResource = newRowItem;
-            e.editTime = new Date(newTime.time);
+            e.editTime = newTime;
             e.triggerEvent = event;
             e.editKind = this._editKind;
             e.item = this._mouseDownItem;
@@ -5467,12 +5425,12 @@
             this.updateEditingToolTip(this._mouseDownItem, (this._mouseDownItemRenderer as DisplayObject));
         }
 
-        private function moveOrResizeItem(eventType:String, event:Event, taskItem:TaskItem, newTime:Date, newRowItem:Object, offset:Point):void
+        private function moveOrResizeItem(eventType:String, event:Event, taskItem:TaskItem, newTime:Number, newRowItem:Object, offset:Point):void
         {
             var e:GanttSheetEvent = new GanttSheetEvent(eventType, false, true);
             e.sourceResource = this._originalResource;
             e.targetResource = newRowItem;
-            e.editTime = new Date(newTime.time);
+            e.editTime = newTime;
             e.triggerEvent = event;
             e.editKind = this._editKind;
             e.item = this._mouseDownItem;
@@ -5607,7 +5565,7 @@
             return (this._editKind == TaskItemEditKind.RESIZE_END || this._editKind == TaskItemEditKind.RESIZE_START) && this.isItemResizeEnabledInternal(this._mouseDownItem, this._editKind);
         }
 
-        private function updateConstraintTargetTask(event:MouseEvent, newTime:Date, offset:Point):void
+        private function updateConstraintTargetTask(event:MouseEvent, newTime:Number, offset:Point):void
         {
             var array:Array;
             if (!this._isCreatingConstraint)
@@ -5633,7 +5591,7 @@
             var e:GanttSheetEvent = new GanttSheetEvent(GanttSheetEvent.ITEM_EDIT_CONSTRAINT, false, true);
             e.sourceTask = this._sourceTask;
             e.targetTask = targetTask;
-            e.editTime = new Date(newTime.time);
+            e.editTime = newTime;
             e.triggerEvent = event;
             e.editKind = this._editKind;
             e.item = this._mouseDownItem;
@@ -5803,6 +5761,12 @@
             }
         }
 
+		/**
+		 * 把所有的树状结构的数据转化为数组 
+		 * @param collection
+		 * @return 
+		 * 
+		 */		
         private function getSummaryTasks(collection:IHierarchicalCollectionView):Array
         {
             var tasks:Array = [];
@@ -5810,7 +5774,13 @@
             tasks.reverse();
             return tasks;
         }
-
+		/**
+		 * 递归树状结构数据 
+		 * @param items
+		 * @param collection
+		 * @param tasks
+		 * 
+		 */
         private function collectSummaryTasks(items:*, collection:IHierarchicalCollectionView, tasks:Array):void
         {
             var i:Object;
@@ -5840,10 +5810,10 @@
             }
             if (!range)
             {
-                if (!(!isNaN(summary.startTime.time) && !isNaN(summary.endTime.time)))
+                if (!(!isNaN(summary.startTime) && !isNaN(summary.endTime)))
                 {
-                    summary.startTime = new Date();
-                    summary.endTime = new Date(summary.startTime.time);
+                    summary.startTime = 0;
+                    summary.endTime = summary.startTime;
                 }
             }
             else
@@ -5857,7 +5827,10 @@
             }
             this._resizingTaskSummaryDepth = this._resizingTaskSummaryDepth - 1;
         }
-
+		/**
+		 * 初始化鼠标样式 
+		 * 
+		 */
         private function installEditingCursor():void
         {
             var cursor:Cursor;
@@ -6504,19 +6477,14 @@
         private function configureInitialVisibleTimeRange():void
         {
             var margin:Number;
-            var start:Date;
-            var end:Date;
+            var start:Number;
+            var end:Number;
             var taskRange:Object;
-            var now:Date;
+            var now:Number;
             var initialHideNonworkingTimes:Boolean;
-            margin = 0;
-            now = new Date();
-            initialHideNonworkingTimes = this.timeController.hideNonworkingTimes;
-            if (initialHideNonworkingTimes)
-            {
-                this.timeController.enableEvents = false;
-                this.timeController.hideNonworkingTimes = false;
-            }
+            margin = 10;
+            now = 0;
+            
             if (this._explicitVisibleTimeRangeStart && this._explicitVisibleTimeRangeEnd)
             {
                 start = this._explicitVisibleTimeRangeStart;
@@ -6527,25 +6495,25 @@
                 if (!isNaN(this._explicitZoomFactor) && this._explicitVisibleTimeRangeStart)
                 {
                     start = this._explicitVisibleTimeRangeStart;
-                    end = new Date(start.time + (width * this._explicitZoomFactor));
+                    end = start + (width * this._explicitZoomFactor);
                 }
                 else if (!isNaN(this._explicitZoomFactor) && this._explicitVisibleTimeRangeEnd)
 				{
 					end = this._explicitVisibleTimeRangeEnd;
-					start = new Date(end.time - (width * this._explicitZoomFactor));
+					start = end - (width * this._explicitZoomFactor);
 				}
 				else if (!isNaN(this._explicitZoomFactor))
 				{
 					taskRange = this.getTaskTimeRange();
 					if (taskRange)
 					{
-						start = new Date(taskRange.start.time - (20 * this._explicitZoomFactor));
-						end = new Date(start.time + ((width - 20) * this._explicitZoomFactor));
+						start = taskRange.start - (20 * this._explicitZoomFactor);
+						end = start + ((width - 20) * this._explicitZoomFactor);
 					}
 					else
 					{
-						start = new Date(now.time - ((width / 5) * this._explicitZoomFactor));
-						end = new Date(now.time + (((width * 4) / 5) * this._explicitZoomFactor));
+						start = now - ((width / 5) * this._explicitZoomFactor);
+						end = now + (((width * 4) / 5) * this._explicitZoomFactor);
 					}
 				}
 				else if (this._explicitVisibleTimeRangeStart)
@@ -6558,7 +6526,7 @@
 					}
 					else
 					{
-						end = this.calendar.addUnits(start, TimeUnit.WEEK, 5, false);
+						end = this.timeComputer.addUnits(start, TimeUnit.MINUTE, 5);
 					}
 				}
 				else if (this._explicitVisibleTimeRangeEnd)
@@ -6571,7 +6539,7 @@
 					}
 					else
 					{
-						start = this.calendar.addUnits(end, TimeUnit.WEEK, -5, false);
+						start = this.timeComputer.addUnits(end, TimeUnit.MINUTE, -5);
 					}
 				}
 				else
@@ -6585,18 +6553,13 @@
 					}
 					else
 					{
-						now = this.calendar.floor(new Date(), TimeUnit.DAY, 1);
-						start = this.calendar.addUnits(now, TimeUnit.WEEK, -1, false);
-						end = this.calendar.addUnits(now, TimeUnit.WEEK, 4, false);
+						now = this.timeComputer.floor(0, TimeUnit.MINUTE, 1);
+						start = this.timeComputer.addUnits(now, TimeUnit.MINUTE, 0);
+						end = this.timeComputer.addUnits(now, TimeUnit.HOUR, 1);
 					}
 				}
             }
             this.timeController.configure(start, end, this.timeRectangle.width, margin);
-            if (initialHideNonworkingTimes)
-            {
-                this.timeController.enableEvents = true;
-                this.timeController.hideNonworkingTimes = initialHideNonworkingTimes;
-            }
         }
     }
 }

@@ -7,7 +7,7 @@
         public var item:Object;
         public var height:Number;
         public var y:Number;
-        public var invalidDistribution:Boolean;
+        public var invalidDistribution:Boolean;//n. 分布；分配
         public var invalidSize:Boolean;
         public var laneCount:uint;
         public var laneHeight:Number;

@@ -17,12 +17,15 @@
     import mx.styles.CSSStyleDeclaration;
     import mx.styles.ISimpleStyleClient;
     
+    import spark.components.Button;
+    
     import __AS3__.vec.Vector;
     
     import mokylin.gantt.supportClasses.TimeScaleRowContainer;
+    import mokylin.utils.AssetsUtil;
     import mokylin.utils.CSSUtil;
     import mokylin.utils.Cursor;
-    import mokylin.utils.GregorianCalendar;
+    import mokylin.utils.TimeComputer;
 
     [Event(name="scaleChange", type="mokylin.gantt.TimeScaleEvent")]
     [Style(name="backgroundColors", type="Array", arrayType="uint", format="Color", inherit="no")]
@@ -60,9 +63,9 @@
         private var _selectionLayer:Sprite;
         private var _visibleTimeRangeChanged:Boolean;
         private var _styleInitialized:Boolean = false;
-        private var _calendar:GregorianCalendar;
-        private var _calendarChanged:Boolean;
-        private var _highlightRange:Vector.<Date>;
+        private var _timeComputer:TimeComputer;
+        private var _timeComputerChanged:Boolean;
+        private var _highlightRange:Vector.<Number>;
         private var _rowLayoutInfos:Vector.<TimeScaleRowLayoutInfo>;
         private var _rows:Vector.<TimeScaleRow>;
         private var _rowsChanged:Boolean;
@@ -74,11 +77,15 @@
         private var _isPanning:Boolean;
         private var _isSelectingRange:Boolean;
         private var _mouseDownLocalPoint:Point;
-        private var _mouseDownTime:Date;
+        private var _mouseDownTime:Number;
         private var _lastPanLocalPoint:Point;
         private var _installedRows:Vector.<TimeScaleRow>;
         private var _rowConfigurationPolicy:TimeScaleRowConfigurationPolicy;
 
+		private var _thumb:Button;
+		private var _thumbDown:Boolean;
+		private var _showThumb:Boolean = true;
+		private var _showThumbChanged:Boolean = false;
         public function TimeScale()
         {
             this._rows = new Vector.<TimeScaleRow>();
@@ -109,23 +116,33 @@
             {
                 this.backgroundColors = ["0xFFFFFF", "0xFF0000"];
                 this.backgroundSkin = TimeScaleBackgroundSkin;
-//                this.panCursor = AssetsUtil.PAN_HORIZONTAL_CURSOR;
+                this.panCursor = AssetsUtil.PAN_HORIZONTAL_CURSOR;
                 this.rollOverAlpha = 1;
                 this.selectRangeCursor = undefined;
                 this.selectRangeCursorOffset = undefined;
                 this.separatorAlpha = 1;
-                this.separatorColor = 0xFF0000;
+                this.separatorColor = 0xFFFFFF;
                 this.separatorSkin = TimeScaleSeparatorSkin;
-                this.separatorThickness = 5;
+                this.separatorThickness = 1;
                 this.useRollOver = true;
             };
         }
+		
+		public function get showThumb():Boolean
+		{
+			return _showThumb;
+		}
+		
+		public function set showThumb(value:Boolean):void
+		{
+			if(_showThumb != value)
+			{
+				_showThumb = value;
+				_showThumbChanged = true;
+				invalidateProperties();
+			}
+		}
 
-		/**
-		 * 返回当前时间轴头的行实例 
-		 * @return 
-		 * 
-		 */		
         public function get automaticRows():Vector.<TimeScaleRow>
         {
             var row:TimeScaleRow;
@@ -140,36 +157,36 @@
             return automaticRows;
         }
 
-        public function get calendar():GregorianCalendar
+        public function get timeComputer():TimeComputer
         {
-            if (!this._calendar)
+            if (!this._timeComputer)
             {
-                this.setCalendar(new GregorianCalendar());
+                this.setTimeComputer(new TimeComputer());
             }
-            return this._calendar;
+            return this._timeComputer;
         }
 
-		public function setCalendar(value:GregorianCalendar):void
+		public function setTimeComputer(value:TimeComputer):void
         {
             if (!value)
             {
-                value = new GregorianCalendar();
+                value = new TimeComputer();
             }
-            if (value == this._calendar)
+            if (value == this._timeComputer)
             {
                 return;
             }
-            this._calendar = value;
-            this._calendarChanged = true;
+            this._timeComputer = value;
+            this._timeComputerChanged = true;
             invalidateProperties();
         }
 
-        private function get highlightRange():Vector.<Date>
+        private function get highlightRange():Vector.<Number>
         {
             return this._highlightRange;
         }
 
-        private function set highlightRange(value:Vector.<Date>):void
+        private function set highlightRange(value:Vector.<Number>):void
         {
             this._highlightRange = value;
             this.drawHighlightRange();
@@ -245,11 +262,13 @@
             if (this._timeController != null)
             {
                 this._timeController.removeEventListener(GanttSheetEvent.VISIBLE_TIME_RANGE_CHANGE, this.visibleTimeRangeChangeHandler);
+				this._timeController.removeEventListener(GanttSheetEvent.VISIBLE_NOW_TIME_CHANGE, this.visibleNowTimeChangeHandler);
             }
             this._timeController = value;
             if (this._timeController != null)
             {
                 this._timeController.addEventListener(GanttSheetEvent.VISIBLE_TIME_RANGE_CHANGE, this.visibleTimeRangeChangeHandler);
+				this._timeController.addEventListener(GanttSheetEvent.VISIBLE_NOW_TIME_CHANGE, this.visibleNowTimeChangeHandler);
             }
             this._timeControllerChanged = true;
             invalidateProperties();
@@ -294,12 +313,12 @@
                 highlightUpdateNeeded = true;
                 invalidateDisplayList();
             }
-            if (this._calendarChanged)
+            if (this._timeComputerChanged)
             {
-                this._calendarChanged = false;
+                this._timeComputerChanged = false;
                 for each (row2 in this._rows)
                 {
-                    row2.setCalendar(this.calendar);
+                    row2.setTimeComputer(this.timeComputer);
                 }
                 this.invalidateRowConfigurationPolicyCriteria();
                 highlightUpdateNeeded = true;
@@ -330,6 +349,11 @@
             {
                 this.updateHighlightRange();
             }
+			if(_showThumbChanged)
+			{
+				_showThumbChanged = false;
+				_thumb.visible  = _showThumb;
+			}
         }
 
         override protected function createChildren():void
@@ -347,6 +371,16 @@
                 this._rowContainer.name = "rows";
                 addChild(this._rowContainer);
             }
+			if(this._thumb == null)
+			{
+				_thumb = new Button();
+				_thumb.width = 20;
+				_thumb.height = 55;
+				_thumb.name = "timeSliderThumb";
+				_thumb.useHandCursor = true;
+				_thumb.mouseEnabled = true;
+				addChild(_thumb);
+			}
             this.createDefaultRows();
         }
 
@@ -356,8 +390,11 @@
             if (this.rows.length == 0)
             {
                 rows = new Vector.<TimeScaleRow>();
-                rows.push(new TimeScaleRow());
-                rows.push(new TimeScaleRow());
+				var row0:TimeScaleRow = new TimeScaleRow();
+				var row1:TimeScaleRow = new TimeScaleRow();
+				row1.showLabels = false;
+                rows.push(row0);
+                rows.push(row1);
                 this.rows = rows;
             }
         }
@@ -381,6 +418,7 @@
             {
                 dispatchEvent(new Event("measuredHeightChanged"));
             }
+			_thumb.height = measuredHeight;
         }
 
         override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
@@ -390,12 +428,7 @@
             this.drawBackground();
             this.drawSeparators();
             this.drawHighlightRange();
-        }
-
-        override protected function resourcesChanged():void
-        {
-            super.resourcesChanged();
-            this.invalidateRowConfigurationPolicyResources();
+			_thumb.x = this.timeController.getCoordinate(this.timeController.nowTime)- _thumb.width/2;
         }
 
         override public function styleChanged(styleProp:String):void
@@ -434,10 +467,6 @@
             this._selectRangeCursor.styleChanged(styleProp, allStyles);
         }
 
-		/**
-		 * 更新时间轴头的布局 
-		 * 
-		 */		
         private function updateRowLayout():void
         {
             var info:TimeScaleRowLayoutInfo;
@@ -460,10 +489,6 @@
             }
         }
 
-		/**
-		 * 绘制时间轴头的背景 
-		 * 
-		 */		
         private function drawBackground():void
         {
             var skinClass:Class;
@@ -506,10 +531,6 @@
             this._separatorContainer = null;
         }
 
-		/**
-		 * 绘制时间轴头的每行的分隔线 
-		 * 
-		 */		
         private function drawSeparators():void
         {
             var skin:IFlexDisplayObject;
@@ -546,7 +567,7 @@
                     while (i < (rowCount - 1))
                     {
                         skin = new skinClass();
-                        if (skin is ISimpleStyleClient)
+                        if ((skin is ISimpleStyleClient))
                         {
                             ISimpleStyleClient(skin).styleName = this;
                             ISimpleStyleClient(skin).styleChanged(null);
@@ -588,8 +609,8 @@
             var vm:EdgeMetrics = this.viewMetrics;
             var contentWidth:Number = unscaledWidth - vm.left - vm.right;
             var contentHeight:Number = unscaledHeight - vm.top - vm.bottom;
-            var start:Date = this._highlightRange[0];
-            var end:Date = this._highlightRange[1];
+            var start:Number = this._highlightRange[0];
+            var end:Number = this._highlightRange[1];
             var startX:Number = this.timeController.getCoordinate(start);
             startX = Math.max(vm.left, Math.min(contentWidth - 1, startX));
             var endX:Number = this.timeController.getCoordinate(end);
@@ -636,14 +657,14 @@
         {
             this._isSelectingRange = false;
             this._mouseDownLocalPoint = null;
-            this._mouseDownTime = null;
+            this._mouseDownTime = 0;
         }
 
         private function resetPanningVariables():void
         {
             this._isPanning = false;
             this._mouseDownLocalPoint = null;
-            this._mouseDownTime = null;
+            this._mouseDownTime = 0;
             this._lastPanLocalPoint = null;
         }
 
@@ -681,6 +702,38 @@
             {
                 return;
             }
+			if(_thumbDown)
+			{
+				_thumb.x = p.x - _thumb.width/2;
+				if(_thumb.x <= 0)
+				{
+					_thumb.x = - _thumb.width/2;
+				}
+				this._timeController.nowTime = this._timeController.getTime(p.x);
+				
+				if(_lastPanLocalPoint != null)
+				{	
+					coordinateDifference = (p.x - this._lastPanLocalPoint.x);
+					if (coordinateDifference > 0)//顺拉
+					{
+						if((this._timeController.endTime - this._timeController.nowTime) < (majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
+						{
+							this._timeController.shiftByCoordinate(coordinateDifference,false,majorScaleRow.tickUnit,majorScaleRow.tickSteps);
+						}	
+					}
+					else if (coordinateDifference < 0)//反拉
+					{
+						if((this._timeController.nowTime - this._timeController.startTime) < (majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
+						{
+							if(this._timeController.startTime == 0)return;
+							this._timeController.shiftByCoordinate(coordinateDifference,false,majorScaleRow.tickUnit,majorScaleRow.tickSteps);
+						}
+					}
+				}
+
+				this._lastPanLocalPoint = p.clone();
+				return;
+			}
             this.updateHighlightRange();
             if (this._isSelectingRange)
             {
@@ -703,7 +756,7 @@
                 coordinateDifference = (this._lastPanLocalPoint.x - p.x);
                 if (coordinateDifference != 0)
                 {
-                    this._timeController.shiftByCoordinate(coordinateDifference);
+                    this._timeController.shiftByCoordinate(coordinateDifference,false);
                     this._lastPanLocalPoint = p.clone();
                 }
             }
@@ -715,10 +768,20 @@
             {
                 return;
             }
-            this._isMouseDown = true;
-            var p:Point = new Point(event.stageX, event.stageY);
-            p = globalToLocal(p);
-            this._mouseDownLocalPoint = p.clone();
+			var p:Point = new Point(event.stageX, event.stageY);
+			p = globalToLocal(p);
+			this._mouseDownLocalPoint = p.clone();
+			
+			if(event.target == _thumb)
+			{
+				_thumbDown = true;
+				var sandboxRoot:DisplayObject = systemManager.getSandboxRoot();
+				sandboxRoot.addEventListener(MouseEvent.MOUSE_UP, this.mouseUpHandler, true);
+				systemManager.deployMouseShields(true);
+				return;
+			}
+			
+            this._isMouseDown = true;   
             this._mouseDownTime = this._timeController.getTime(p.x);
             if (event.ctrlKey)
             {
@@ -726,7 +789,7 @@
                 this.installSelectRangeCursor();
             }
             this.updateHighlightRange();
-            var sandboxRoot:DisplayObject = systemManager.getSandboxRoot();
+            sandboxRoot = systemManager.getSandboxRoot();
             sandboxRoot.addEventListener(MouseEvent.MOUSE_UP, this.mouseUpHandler, true);
             sandboxRoot.addEventListener(MouseEvent.MOUSE_MOVE, this.mouseMoveHandler, true);
             sandboxRoot.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, this.mouseUpSomewhereHandler, true);
@@ -751,14 +814,22 @@
 
         private function mouseUpHandlerImpl(p:Point, altKey:Boolean, ctrlKey:Boolean, shiftKey:Boolean):void
         {
-            var start:Date;
-            var end:Date;
-            var tmp:Date;
+            var start:Number;
+            var end:Number;
+            var tmp:Number;
             if (!enabled)
             {
                 return;
             }
-            var sandboxRoot:DisplayObject = systemManager.getSandboxRoot();
+			if(_thumbDown)
+			{
+				_thumbDown = false;
+				var sandboxRoot:DisplayObject = systemManager.getSandboxRoot();
+				sandboxRoot.removeEventListener(MouseEvent.MOUSE_UP, this.mouseUpHandler, true);
+				systemManager.deployMouseShields(false);
+				return;
+			}
+            sandboxRoot = systemManager.getSandboxRoot();
             sandboxRoot.removeEventListener(MouseEvent.MOUSE_UP, this.mouseUpHandler, true);
             sandboxRoot.removeEventListener(MouseEvent.MOUSE_MOVE, this.mouseMoveHandler, true);
             sandboxRoot.removeEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, this.mouseUpHandler, true);
@@ -777,13 +848,13 @@
 				this.removeSelectRangeCursor();
 				start = this._mouseDownTime;
 				end = this._timeController.getTime(p.x);
-				if (start.time > end.time)
+				if (start > end)
 				{
 					tmp = start;
 					start = end;
 					end = tmp;
 				}
-				if ((end.time - start.time) > this.zoomFactor)
+				if ((end - start) > this.zoomFactor)
 				{
 					this._timeController.configure(start, end, this._timeController.width, 0, true);
 				}
@@ -803,6 +874,7 @@
 					}
 				}
 			}
+			
             this._isMouseDown = false;
             this.updateHighlightRange();
             invalidateDisplayList();
@@ -846,8 +918,8 @@
 
         private function updateHighlightRange():void
         {
-            var end:Date;
-            var range:Vector.<Date>;
+            var end:Number;
+            var range:Vector.<Number>;
             var row:TimeScaleRow;
             if (!this._isMouseOver || this._isPanning)
             {
@@ -858,14 +930,14 @@
             if (this._isSelectingRange)
             {
                 end = this._timeController.getTime(p.x);
-                range = new Vector.<Date>(2, true);
+                range = new Vector.<Number>(2, true);
                 range[0] = this._mouseDownTime;
                 range[1] = end;
                 this.highlightRange = range;
             }
             else
-            {
-                row = this.getRowAt(p);
+            {//暂时不需要这个功能，先注释掉，后面根据需求，再考虑是否打开注释
+                /*row = this.getRowAt(p);
                 if (row == null)
                 {
                     this.highlightRange = null;
@@ -873,16 +945,10 @@
                 }
                 p = localToGlobal(p);
                 p = row.globalToLocal(p);
-                this.highlightRange = row.getCellRangeAt(p);
+                this.highlightRange = row.getCellRangeAt(p);*/
             }
         }
 
-		/**
-		 * 根据鼠标点的位置，获得鼠标当前是时间轴头的那一行 
-		 * @param p
-		 * @return 
-		 * 
-		 */		
         private function getRowAt(p:Point):TimeScaleRow
         {
             var info:TimeScaleRowLayoutInfo;
@@ -900,6 +966,18 @@
             }
             return null;
         }
+		
+		private function visibleNowTimeChangeHandler(event:GanttSheetEvent):void
+		{
+			if(!_thumbDown)
+			{
+				if((this._timeController.endTime - this._timeController.nowTime) < (majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
+				{
+					this._timeController.shiftByCoordinate(2,false,majorScaleRow.tickUnit,majorScaleRow.tickSteps);
+				}
+				invalidateDisplayList();
+			}
+		}
 
         private function visibleTimeRangeChangeHandler(event:GanttSheetEvent):void
         {
@@ -935,7 +1013,7 @@
             for each (row in this._installedRows)
             {
                 row.timeController = null;
-                row.setCalendar(null);
+                row.setTimeComputer(null);
                 if (this._rowContainer)
                 {
                     this._rowContainer.removeChild(row);
@@ -954,7 +1032,7 @@
             for each (row in this._rows)
             {
                 row.timeController = this.timeController;
-                row.setCalendar(this.calendar);
+                row.setTimeComputer(this.timeComputer);
                 row.styleName = this;
                 row.owner = this;
                 if (this._rowContainer != null)
@@ -964,11 +1042,12 @@
             }
             this._installedRows = this._rows;
         }
-		/**
-		 * 次要的行 
-		 * @return 
-		 * 
-		 */
+		
+		public function get majorScaleRow():TimeScaleRow
+		{
+			return this.automaticRows[0];
+		}
+
 		public function get minorScaleRow():TimeScaleRow
         {
             var rows:Vector.<TimeScaleRow> = this.automaticRows;
@@ -979,10 +1058,6 @@
             return null;
         }
 
-		/**
-		 * 配置时间轴头的行信息，根据时间来配置 
-		 * 
-		 */		
         public function configureAutomaticRows():void
         {
             if (!this._timeController || !this._timeController.configured)
@@ -1019,7 +1094,7 @@
                 row = rows[i];
                 row.tickUnit = setting.unit;
                 row.tickSteps = setting.steps;
-                row.formatString = setting.formatString;
+//                row.formatString = setting.formatString;
                 row.subTickUnit = setting.subunit;
                 row.subTickSteps = setting.substeps;
                 i++;
@@ -1033,18 +1108,14 @@
                 this._rowConfigurationPolicy = this.createRowConfigurationPolicy();
                 if (this._rowConfigurationPolicy != null)
                 {
-                    this._rowConfigurationPolicy.resourceManager = resourceManager;
+//                    this._rowConfigurationPolicy.resourceManager = resourceManager;
                     this._rowConfigurationPolicy.rows = this.automaticRows;
                     this._rowConfigurationPolicy.timeController = this.timeController;
                 }
             }
             return this._rowConfigurationPolicy;
         }
-		/**
-		 * 创建一套行配置的方针
-		 * @return 
-		 * 
-		 */
+
         private function createRowConfigurationPolicy():TimeScaleRowConfigurationPolicy
         {
             var policy:TimeScaleRowConfigurationPolicy;
@@ -1057,7 +1128,7 @@
             {
                 if (this.automaticRows.length == 1)
                 {
-                    policy = new TimeScaleConfigurationPolicyForOneRow();
+//                    policy = new TimeScaleConfigurationPolicyForOneRow();
                 }
                 else
                 {
@@ -1067,10 +1138,6 @@
             return policy;
         }
 
-		/**
-		 * 更新行配置方针 
-		 * 
-		 */		
 		public function invalidateRowConfigurationPolicy():void
         {
             this._rowConfigurationPolicy = null;
@@ -1082,17 +1149,7 @@
         {
             if (this._rowConfigurationPolicy)
             {
-                this._rowConfigurationPolicy.invalidateCriteria();
-            }
-            this._invalidateScale = true;
-            invalidateProperties();
-        }
-
-        private function invalidateRowConfigurationPolicyResources():void
-        {
-            if (this._rowConfigurationPolicy)
-            {
-                this._rowConfigurationPolicy.invalidateResources();
+                this._rowConfigurationPolicy.invalidateCriteria();//这里告诉下一帧的人，要改变下刻度标准了，
             }
             this._invalidateScale = true;
             invalidateProperties();
