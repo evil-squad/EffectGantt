@@ -2,11 +2,8 @@
 {
     public class TimeUtil 
     {
-
-        public static const MINIMUM_DATE_Old:Date = new Date(100, 0);
-        /*public static const MAXIMUM_DATE:Date = new Date(10000, 0);*/
-		public static const MINIMUM_DATE:Number = 0;
-		public static const MAXIMUM_DATE:Number = 3600000;
+		public static const MINIMUM_TIME:Number = 0;
+		public static const MAXIMUM_TIME:Number = 1000000;
         public static const SUNDAY:int = 0;
         public static const MONDAY:int = 1;
         public static const TUESDAY:int = 2;

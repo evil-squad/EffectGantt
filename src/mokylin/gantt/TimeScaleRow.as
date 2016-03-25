@@ -58,10 +58,10 @@
 	public class TimeScaleRow extends UIComponent 
 	{
 		
-		private static const DEFAULT_PADDING_BOTTOM:Number = 3;
-		private static const DEFAULT_PADDING_TOP:Number = 3;
-		private static const DEFAULT_LABEL_POSITION:String = TimeScaleLabelPosition.CENTERED_ON_TICK;//"afterTick"
-		private static const _stringForHeight:String = "Wj";
+		private static const DEFAULT_PADDING_BOTTOM:Number = 2;
+		private static const DEFAULT_PADDING_TOP:Number = 2;
+		private static const DEFAULT_LABEL_POSITION:String = TimeScaleLabelPosition.AFTER_TICK;
+		private static const _stringForHeight:String = "1s";
 		
 		private var _unusedTickItemPool:Vector.<TimeScaleTickItem>;
 		private var _tickItems:Vector.<TimeScaleTickItem>;
@@ -167,7 +167,7 @@
 			{
 				this.labelBottom = 0;
 				this.labelPosition = DEFAULT_LABEL_POSITION;
-				this.labelStyleName = undefined;
+				this.labelStyleName = "timelineFont";
 				this.labelTop = 0;
 				this.paddingBottom = DEFAULT_PADDING_BOTTOM;
 				this.paddingTop = DEFAULT_PADDING_TOP;
@@ -177,7 +177,7 @@
 				this.subTickColor = 0xC9C9C9;
 				this.subTickSkin = TimeScaleSubTickSkin;
 				this.subTickThickness = 1;
-				this.subTickTop = 17;
+				this.subTickTop = 10;
 				this.tickAlpha = 1;
 				this.tickBottom = 0;
 				this.tickColor = 0xC9C9C9;
@@ -905,7 +905,7 @@
 			var width:Number;
 			this._subTickLayer.recycleAllRenderers();
 			var contentY:Number = this._paddingTop;
-			var contentHeight:Number = ((unscaledHeight - this._paddingTop) - this._paddingBottom);
+			var contentHeight:Number = unscaledHeight - this._paddingTop - this._paddingBottom;
 			var subtickTop:Number = getStyle("subTickTop");
 			var subtickBottom:Number = getStyle("subTickBottom");
 			for each (item in items)

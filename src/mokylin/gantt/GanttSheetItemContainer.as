@@ -26,7 +26,13 @@
 		
         protected var _visibleTimeRangeChanged:Boolean;
         protected var _sizeChanged:Boolean;
+		/**
+		 * 大小发生变化 
+		 */		
         protected var _itemsSizeChanged:Boolean;
+		/**
+		 * 位置发生变化 
+		 */		
         protected var _itemsPositionChanged:Boolean;
 		
         protected var _freeItemRenderers:Array;
@@ -209,6 +215,10 @@
             this._updateRenderersNeeded = false;
         }
 
+		/**
+		 * 留到子类实现 
+		 * 
+		 */		
         protected function updateItemRenderers():void
         {
         }

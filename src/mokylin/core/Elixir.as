@@ -1,13 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (C) 2007-2008 ILOG, S.A.
-//  All Rights Reserved.
-//  The following is ILOG Source Code.  No modifications may be made to the  
-//  ILOG Source Code.  Any usage of the ILOG Source Code is subject to 
-//  the terms and conditions of the ILOG End User License Agreement   
-//  applicable to this ILOG software product.
-//
-///////////////////////////////////////////////////////////////////////////////
 package mokylin.core
 {
   /**

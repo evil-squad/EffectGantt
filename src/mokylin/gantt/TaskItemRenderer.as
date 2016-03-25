@@ -58,17 +58,21 @@
     [Style(name="useTruncate", type="Boolean", inherit="yes")]
     public class TaskItemRenderer extends UIComponent implements IDataRenderer, IListItemRenderer, IConstraintConnectionBounds 
     {
-
+		/**
+		 * 当字符超过显示区域时，会用这个字符替代 
+		 */
         protected static const TRUNCATION_ELLIPSIS:String = "…";
 
         protected var _label:IUITextField;
         protected var _useTruncate:Boolean;
         private var _oldUnscaledWidth:Number;
         private var _oldUnscaledHeight:Number;
+		
         protected var _barSkin:IFlexDisplayObject;
         protected var _constraintHighlightSkin:IFlexDisplayObject;
         protected var _startSkin:IFlexDisplayObject;
         protected var _endSkin:IFlexDisplayObject;
+		
         protected var _childAdded:Boolean;
         protected var _labelChanged:Boolean;
         private var _previousLabelColor:uint = 0xFFFFFFFF;
@@ -126,9 +130,9 @@
                 this.startSymbolSkin = TaskSymbolSkin;
 				
                 this.textPosition = "inside";
-                this.textRollOverColor = 0;
-                this.textSelectedColor = 0;
-                this.textSelectedRollOverColor = 0;
+                this.textRollOverColor = 0xff0000;
+                this.textSelectedColor = 0xff0000;
+                this.textSelectedRollOverColor = 0xff0000;
                 this.textStyleName = null;
                 this.useTruncate = false;
                 this.selectedColor = this.selectionColor;
@@ -157,7 +161,7 @@
                 this.startSymbolColor = 0xFF;
                 this.startSymbolShape = "none";
                 this.startSymbolSkin = TaskSymbolSkin;
-                this.textPosition = "right";
+                this.textPosition = "inside";
             }
             var defaultMilestone:CSSStyleDeclaration = CSSUtil.createSelector(".milestoneTask", null, styleManager);
             defaultMilestone.defaultFactory = function ():void
@@ -199,7 +203,7 @@
                 this.startSymbolBorderColor = 0;
                 this.startSymbolColor = 0;
                 this.startSymbolShape = "downPentagon";
-                this.textPosition = "right";
+                this.textPosition = "inside";
             }
             var defaultText:CSSStyleDeclaration = CSSUtil.createSelector(".defaultText", null, styleManager);
             defaultText.defaultFactory = function ():void
@@ -231,7 +235,10 @@
         {
             return this._data as TaskItem;
         }
-
+		/**
+		 * 创建一个label 
+		 * 
+		 */
         override protected function createChildren():void
         {
             var style:Object;
@@ -268,7 +275,10 @@
                 }
             }
         }
-
+		/**
+		 * 设置该组件的默认大小------[计量] 测量值；测定值
+		 * 
+		 */
         override protected function measure():void
         {
             var format:UITextFormat;
@@ -290,7 +300,7 @@
                 {
                     measuredMinHeight = labelHeight;
                 }
-                measuredHeight = (labelHeight + 4);
+                measuredHeight = labelHeight + 4;
             }
             else
             {
@@ -504,24 +514,18 @@
             {
                 labelColor = getStyle("textSelectedRollOverColor");
             }
-            else
-            {
-                if (selected)
-                {
-                    labelColor = getStyle("textSelectedColor");
-                }
-                else
-                {
-                    if (highlighted)
-                    {
-                        labelColor = getStyle("textRollOverColor");
-                    }
-                    else
-                    {
-                        labelColor = StyleManager.NOT_A_COLOR;
-                    }
-                }
-            }
+            else if (selected)
+			{
+				labelColor = getStyle("textSelectedColor");
+			}
+			else if (highlighted)
+			{
+				labelColor = getStyle("textRollOverColor");
+			}
+			else
+			{
+				labelColor = StyleManager.NOT_A_COLOR;
+			}
             if (this._previousLabelColor != labelColor)
             {
                 this._label.setColor(labelColor);
@@ -546,7 +550,7 @@
                 skinClass = Class(getStyle("barSkin"));
                 if (skinClass)
                 {
-                    this._barSkin = IFlexDisplayObject(new (skinClass)());
+                    this._barSkin = IFlexDisplayObject(new skinClass());
                     if (this._barSkin is ISimpleStyleClient)
                     {
                         ISimpleStyleClient(this._barSkin).styleName = this;

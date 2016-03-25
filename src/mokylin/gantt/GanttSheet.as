@@ -347,7 +347,7 @@
         private var _taskItemContainer:GanttSheetTaskContainer;
         public var liveScrolling:Boolean = true;
         private var _minScrollTime:Number=0;
-		private var _maxScrollTime:Number=TimeUnit.HOUR.milliseconds;
+		private var _maxScrollTime:Number=TimeUtil.MAXIMUM_TIME;
         private var _timeBoundsChanged:Boolean;
         
         private var _explicitMaxVisibleTime:Number;
@@ -409,8 +409,8 @@
 
         public function GanttSheet()
         {
-            this._tasksIntervalStart = TimeUtil.MINIMUM_DATE;
-            this._tasksIntervalEnd = TimeUtil.MINIMUM_DATE;
+            this._tasksIntervalStart = TimeUtil.MINIMUM_TIME;
+            this._tasksIntervalEnd = TimeUtil.MAXIMUM_TIME;
             this._taskItems = {};
             this._constraintItems = {};
             this._selectedUIDs = {};
@@ -463,7 +463,7 @@
             var styleDeclaration:CSSStyleDeclaration = CSSUtil.createSelector("GanttSheet", "mokylin.gantt", styleManager);
             styleDeclaration.defaultFactory = function ():void
             {
-                this.alternatingItemColors = [0xF7F7F7, 0xFFFFFF];
+                this.alternatingItemColors = [0xe1e4e5, 0xFDFFFF];
                 this.animationDuration = 500;
                 this.autoScrollRepeatInterval = AUTOSCROLL_REPEAT_INTERVAL;
                 this.autoScrollXThreshold = AUTOSCROLL_X_THRESHOLD;
@@ -495,7 +495,7 @@
                 this.resizeStartCursor = AssetsUtil.RESIZE_ITEM_HORIZONTAL_CURSOR;
                 this.resizeStartCursorOffset = undefined;
                 this.rowPadding = undefined;
-                this.scrollMargin = 20;
+                this.scrollMargin = 0;
                 this.timeGridAlpha = 1;
                 this.timeGridColor = 0xC9C9C9;
                 this.useRollOver = true;
@@ -1113,7 +1113,7 @@
             {
                 return this._timeController.maximumTime;
             }
-            return TimeUtil.MAXIMUM_DATE;
+            return TimeUtil.MAXIMUM_TIME;
         }
 
         public function set maxVisibleTime(value:Number):void
@@ -1156,7 +1156,7 @@
             {
                 return this._timeController.minimumTime;
             }
-            return TimeUtil.MINIMUM_DATE;
+            return TimeUtil.MINIMUM_TIME;
         }
 
         public function set minVisibleTime(value:Number):void
@@ -1958,7 +1958,15 @@
         {
             if (initialized)
             {
-                this._timeController.shiftByCoordinate(delta, animate);
+				if(timeScale && timeScale.minorScaleRow)
+				{
+					delta /= PANNING_THRESHOLD;
+					this._timeController.shiftByCoordinate(delta, animate,timeScale.minorScaleRow.tickUnit,timeScale.minorScaleRow.tickSteps);
+				}
+				else
+				{
+					this._timeController.shiftByCoordinate(delta, animate);
+				}
             }
         }
 
@@ -3094,7 +3102,7 @@
 			{
 				_thumbLine.graphics.lineStyle(1,0xff0000);
 				_thumbLine.graphics.moveTo(0.5,0.5);
-				_thumbLine.graphics.lineTo(0.5,unscaledHeight);
+				_thumbLine.graphics.lineTo(0.5,unscaledHeight-horizontalScrollBarHeight);
 				
 				_thumbLine.x = this.timeController.getCoordinate(this.timeController.nowTime);
 				if(_timeScale.showThumb)
@@ -3360,7 +3368,7 @@
 				{
 					value = this.horizontalScrollBar.maximum;
 				}
-                this.horizontalScrollBar.value = value;
+                this.horizontalScrollBar.value = value-(value%10);
                 this.horizontalScrollBar.pageSize = this.timeRectangle.width;
             }
             this.horizontalScrollBar.stepSize = 0;
@@ -3747,44 +3755,32 @@
                 {
                     itemArea = BAR_MOVE_REASSIGN;
                 }
-                else
-                {
-                    if (moveEnabled)
-                    {
-                        itemArea = BAR_MOVE;
-                    }
-                    else
-                    {
-                        if (reassignEnabled)
-                        {
-                            itemArea = BAR_REASSIGN;
-                        }
-                        else
-                        {
-                            if (this.isConstraintCreationEnabledInternal(item, true))
-                            {
-                                itemArea = BAR_CREATE_CONSTRAINT;
-                            }
-                            else
-                            {
-                                itemArea = null;
-                            }
-                        }
-                    }
-                }
+                else if (moveEnabled)
+				{
+					itemArea = BAR_MOVE;
+				}
+				else if (reassignEnabled)
+				{
+					itemArea = BAR_REASSIGN;
+				}
+				else if (this.isConstraintCreationEnabledInternal(item, true))
+				{
+					itemArea = BAR_CREATE_CONSTRAINT;
+				}
+				else
+				{
+					itemArea = null;
+				}
             }
-            else
-            {
-                if (itemArea == TaskItemArea.START || itemArea == TaskItemArea.END)
-                {
-                    editKind = itemArea == TaskItemArea.START ? TaskItemEditKind.RESIZE_START : TaskItemEditKind.RESIZE_END;
-                    resizeEnabled = this.isItemResizeEnabledInternal(item, editKind);
-                    if (!resizeEnabled)
-                    {
-                        itemArea = this.isConstraintCreationEnabledInternal(item, true) ? BAR_CREATE_CONSTRAINT : null;
-                    }
-                }
-            }
+            else if (itemArea == TaskItemArea.START || itemArea == TaskItemArea.END)
+			{
+				editKind = itemArea == TaskItemArea.START ? TaskItemEditKind.RESIZE_START : TaskItemEditKind.RESIZE_END;
+				resizeEnabled = this.isItemResizeEnabledInternal(item, editKind);
+				if (!resizeEnabled)
+				{
+					itemArea = this.isConstraintCreationEnabledInternal(item, true) ? BAR_CREATE_CONSTRAINT : null;
+				}
+			}
             return itemArea ? this._itemAreaInfo[itemArea] : null;
         }
 
@@ -5073,6 +5069,11 @@
             event.resizeTask();
         }
 
+		/**
+		 * 每条任务拖拽改变完成后的回调函数 来更新
+		 * @param event
+		 * 
+		 */		
         private function itemEditEndHandler(event:GanttSheetEvent):void
         {
             if (event.isDefaultPrevented())
@@ -6568,7 +6569,7 @@
 					{
 						now = this.timeComputer.floor(0, TimeUnit.MINUTE, 1);
 						start = this.timeComputer.addUnits(now, TimeUnit.MINUTE, 0);
-						end = this.timeComputer.addUnits(now, TimeUnit.HOUR, 1);
+						end = this.timeComputer.addUnits(now, TimeUnit.MINUTE, 10);
 					}
 				}
             }

@@ -62,7 +62,7 @@
         public function TimeController()
         {
             this._easingFunction = Exponential.easeOut;
-            this._maximumTime = TimeUnit.HOUR.milliseconds;
+            this._maximumTime = TimeUtil.MAXIMUM_TIME;
             this._maximumZoomFactor = (TimeUnit.SECOND.milliseconds * 10) / 50;
             this._minimumTime = 0;
             this._minimumZoomFactor = MINIMUM_ZOOM_FACTOR;
@@ -376,8 +376,8 @@
         {
             this.stopAnimation();
             this.beginVisibleTimeRangeChange();
-            this._minimumTime = TimeUtil.bound(min, TimeUtil.MINIMUM_DATE, TimeUtil.MAXIMUM_DATE);
-            this._maximumTime = TimeUtil.bound(max, TimeUtil.MINIMUM_DATE, TimeUtil.MAXIMUM_DATE);
+            this._minimumTime = TimeUtil.bound(min, TimeUtil.MINIMUM_TIME, TimeUtil.MAXIMUM_TIME);
+            this._maximumTime = TimeUtil.bound(max, TimeUtil.MINIMUM_TIME, TimeUtil.MAXIMUM_TIME);
 
             this._maximumDuration = NaN;
             if (this.configured)
@@ -415,19 +415,11 @@
 
         public function shiftByCoordinate(delta:Number, animate:Boolean=false,unit:TimeUnit=null,steps:Number=0):void
         {
+			trace("***********************************" + delta);
             var projectedTimeOffset:Number;
-			var positive:int=1;
 			if(unit != null && steps != 0)
 			{
-				/*if(delta > 0)
-				{
-					positive=1;
-				}
-				else
-				{
-					positive=-1;
-				}*/
-				projectedTimeOffset = delta * positive * unit.milliseconds * steps;
+				projectedTimeOffset = delta * unit.milliseconds * steps;
 			}
 			else
 			{

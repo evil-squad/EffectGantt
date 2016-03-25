@@ -53,7 +53,7 @@
             this.rowHeightCache = new LRUCache(128);
             super();
             verticalScrollPolicy = ScrollPolicy.OFF;
-            horizontalScrollPolicy = ScrollPolicy.ON;
+            horizontalScrollPolicy = ScrollPolicy.OFF;
         }
 
 		public function get hScrollBar():ScrollBar
@@ -519,8 +519,8 @@
                     indicesScrolled++;
                     i--;
                 }
-                amountScrolled = -(amountScrolled);
-                indicesScrolled = -(indicesScrolled);
+                amountScrolled = -amountScrolled;
+                indicesScrolled = -indicesScrolled;
             }
             if (indicesScrolled != 0)
             {
@@ -531,7 +531,7 @@
 
         private function computeRowHeight(index:Number):Number
         {
-            if (!(variableRowHeight))
+            if (!variableRowHeight)
             {
                 return rowHeight;
             }
@@ -582,7 +582,7 @@
             var data:Object;
             var nextIndex:Number;
             var lastKnownRendererPosition:Number = this._animatedRowInfoAll[(this._animatedRowInfoAll.length - 1)].y;
-            var firstRowPosition:Number = (((rowInfo.length)>0) ? rowInfo[0].y : 0);
+            var firstRowPosition:Number = rowInfo.length>0 ? rowInfo[0].y : 0;
             var i:int;
             while (i < rowInfo.length && rowInfo[i].uid)
             {

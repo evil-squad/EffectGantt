@@ -143,7 +143,7 @@
                 this.borderSkin = HaloBorder;
                 this.borderStyle = "none";
                 this.borderThickness = 0;
-                this.dataGridStyleName = undefined;
+                this.dataGridStyleName = "ganttDataGrid";
                 this.dropShadowColor = 0;
                 this.dropShadowEnabled = true;
                 this.ganttSheetStyleName = undefined;
@@ -231,17 +231,6 @@
             }
         }
 
-        /*[Inspectable(category="General", type="Number", enumeration="0,1,2,3,4,5,6")]
-        public function get firstDayOfWeek():Object
-        {
-            return this.calendar.firstDayOfWeek;
-        }
-
-        public function set firstDayOfWeek(value:Object):void
-        {
-            this.calendar.firstDayOfWeek = value;
-        }*/
-
         [Inspectable(category="General")]
         public function get ganttSheet():GanttSheet
         {
@@ -261,17 +250,6 @@
                 }
             }
         }
-
-        /*[Inspectable(category="General", type="Number", enumeration="1,2,3,4,5,6,7", defaultValue="1")]
-        public function get minimalDaysInFirstWeek():Object
-        {
-            return this.calendar.minimalDaysInFirstWeek;
-        }
-
-        public function set minimalDaysInFirstWeek(value:Object):void
-        {
-            this.calendar.minimalDaysInFirstWeek = value;
-        }*/
 
 		public function get rowController():IRowController
         {
@@ -650,13 +628,11 @@
             if (!property || property == this.taskStartTimeField || this.taskStartTimeFunction != null)
             {
                 value = DataUtil.getFieldValue(item.data, this.taskStartTimeField, null, this.taskStartTimeFunction);
-                //date = TimeUtil.getDate(value);
                 item.startTime = Number(value);
             }
             if (!property || property == this.taskEndTimeField || this.taskEndTimeFunction != null)
             {
                 value = DataUtil.getFieldValue(item.data, this.taskEndTimeField, null, this.taskEndTimeFunction);
-                //date = TimeUtil.getDate(value);
                 item.endTime = Number(value);
             }
             if (!property || property == this.taskIsMilestoneField || this.taskIsMilestoneFunction != null)
@@ -670,7 +646,7 @@
         {
             if (this.taskStartTimeField)
             {
-                this.setItemField(item.data, this.taskStartTimeField, new Date(item.startTime));
+                this.setItemField(item.data, this.taskStartTimeField, item.startTime);
             }
             else
             {
@@ -678,7 +654,7 @@
             }
             if (this.taskEndTimeField)
             {
-                this.setItemField(item.data, this.taskEndTimeField, new Date(item.endTime));
+                this.setItemField(item.data, this.taskEndTimeField, item.endTime);
             }
             else
             {
@@ -779,7 +755,6 @@
                 this._ganttArea.removeChild(oldTimeScale);
             }
             this._timeScale.name = "timeScale";
-//            this._timeScale.setCalendar(this.calendar);
             this._timeScale.timeController = this._timeController;
             this._timeScale.enabled = enabled;
             if (!this._timeScale.styleName)

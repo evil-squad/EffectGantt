@@ -115,7 +115,7 @@
             var styleDeclaration:CSSStyleDeclaration = CSSUtil.createSelector("TimeScale", "mokylin.gantt", styleManager);
             styleDeclaration.defaultFactory = function ():void
             {
-                this.backgroundColors = ["0xFFFFFF", "0xFF0000"];
+                this.backgroundColors = ["0x262626", "0x000000"];
                 this.backgroundSkin = TimeScaleBackgroundSkin;
                 this.panCursor = AssetsUtil.PAN_HORIZONTAL_CURSOR;
                 this.rollOverAlpha = 1;
@@ -376,8 +376,8 @@
 			{
 				_thumb = new Button();
 				_thumb.width = 20;
-				_thumb.height = 55;
 				_thumb.name = "timeSliderThumb";
+				_thumb.styleName = "timeSliderThumb";
 				_thumb.useHandCursor = true;
 				_thumb.mouseEnabled = true;
 				addChild(_thumb);
@@ -726,7 +726,7 @@
 				
 				if(_lastPanLocalPoint != null)
 				{	
-					coordinateDifference = (p.x - this._lastPanLocalPoint.x);
+					/*coordinateDifference = (p.x - this._lastPanLocalPoint.x);
 					if (coordinateDifference > 0)//顺拉
 					{
 						if((this._timeController.endTime - this._timeController.nowTime) < 2*(majorScaleRow.tickUnit.milliseconds * majorScaleRow.tickSteps))
@@ -741,7 +741,7 @@
 							if(this._timeController.startTime == 0)return;
 							this._timeController.shiftByCoordinate(coordinateDifference,false,minorScaleRow.tickUnit,minorScaleRow.tickSteps);
 						}
-					}
+					}*/
 				}
 
 				this._lastPanLocalPoint = p.clone();
@@ -766,10 +766,11 @@
             }
             if (this._isPanning && this._isMouseDown && buttonDown)
             {
-                coordinateDifference = (this._lastPanLocalPoint.x - p.x);
+                coordinateDifference = (this._lastPanLocalPoint.x - p.x)/PANNING_X_THRESHOLD;
+				
                 if (coordinateDifference != 0)
                 {
-                    this._timeController.shiftByCoordinate(coordinateDifference,false);
+                    this._timeController.shiftByCoordinate(coordinateDifference,false,minorScaleRow.tickUnit,minorScaleRow.tickSteps);
                     this._lastPanLocalPoint = p.clone();
                 }
             }
@@ -873,19 +874,22 @@
 				}
 				this.resetSelectionVariables();
 			}
+			else if (shiftKey)
+			{
+				this._timeController.zoomAt(this.ZOOM_OUT_RATIO, p.x, true);
+			}
+			else if (this._highlightRange)
+			{
+				this._timeController.configure(this._highlightRange[0], this._highlightRange[1], this._timeController.width, 0, true);
+			}
 			else
 			{
-				if (shiftKey)
+				_thumb.x = p.x - _thumb.width/2;
+				if(_thumb.x <= 0)
 				{
-					this._timeController.zoomAt(this.ZOOM_OUT_RATIO, p.x, true);
+					_thumb.x = - _thumb.width/2;
 				}
-				else
-				{
-					if (this._highlightRange)
-					{
-						this._timeController.configure(this._highlightRange[0], this._highlightRange[1], this._timeController.width, 0, true);
-					}
-				}
+				this._timeController.nowTime = this._timeController.getTime(p.x);
 			}
 			
             this._isMouseDown = false;

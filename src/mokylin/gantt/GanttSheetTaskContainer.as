@@ -117,7 +117,7 @@
         {
             var uid:String;
             var renderer:DisplayObject;
-            var rowItem:Object;
+            var rowItem:Object;//类型为用户自定义数据载体格式，目前DEMO是SchedulingTask类型
             var rowInfo:Object;
             var rowLayoutInfo:RowLayoutInfo;
             var updateItemsInRow:Boolean;
