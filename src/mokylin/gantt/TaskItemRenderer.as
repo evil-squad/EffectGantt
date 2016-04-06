@@ -98,7 +98,7 @@
             var styleDeclaration:CSSStyleDeclaration = CSSUtil.createSelector("TaskItemRenderer", "mokylin.gantt", styleManager);
             styleDeclaration.defaultFactory = function ():void
             {
-                this.backgroundColor = 0XFFDB97;
+                this.backgroundColor = 0XFF0000;
                 this.barBottomMargin = 0;
                 this.barSkin = TaskBarSkin;
                 this.barTopMargin = 0;
@@ -129,10 +129,10 @@
                 this.startSymbolShape = "none";
                 this.startSymbolSkin = TaskSymbolSkin;
 				
-                this.textPosition = "inside";
-                this.textRollOverColor = 0xff0000;
-                this.textSelectedColor = 0xff0000;
-                this.textSelectedRollOverColor = 0xff0000;
+                this.textPosition = "right";
+                this.textRollOverColor = 0xFF0000;
+                this.textSelectedColor = 0xFF0000;
+                this.textSelectedRollOverColor = 0xFF0000;
                 this.textStyleName = null;
                 this.useTruncate = false;
                 this.selectedColor = this.selectionColor;
@@ -161,7 +161,7 @@
                 this.startSymbolColor = 0xFF;
                 this.startSymbolShape = "none";
                 this.startSymbolSkin = TaskSymbolSkin;
-                this.textPosition = "inside";
+                this.textPosition = "right";
             }
             var defaultMilestone:CSSStyleDeclaration = CSSUtil.createSelector(".milestoneTask", null, styleManager);
             defaultMilestone.defaultFactory = function ():void
@@ -172,7 +172,7 @@
                 this.borderColor = 0;
                 this.borderRollOverColor = 0;
                 this.borderSelectedColor = 0;
-                this.borderSelectedRollOverColor = 0;
+                this.borderSelectedRollOverColor = 0xff0000;
                 this.constraintHighlightLeftPadding = 0;
                 this.constraintHighlightRightPadding = 0;
                 this.constraintHighlightTopPadding = 0;
@@ -199,18 +199,18 @@
                 this.constraintHighlightBottomPadding = 0;
                 this.endSymbolBorderColor = 0;
                 this.endSymbolColor = 0;
-                this.endSymbolShape = "downPentagon";
+                this.endSymbolShape = "downArrow";
                 this.startSymbolBorderColor = 0;
                 this.startSymbolColor = 0;
-                this.startSymbolShape = "downPentagon";
-                this.textPosition = "inside";
+                this.startSymbolShape = "downArrow";
+                this.textPosition = "right";
             }
             var defaultText:CSSStyleDeclaration = CSSUtil.createSelector(".defaultText", null, styleManager);
             defaultText.defaultFactory = function ():void
             {
                 this.fontSize = 10;
                 this.fontWeight = "normal";
-                this.textAlign = "left";
+                this.textAlign = "right";
             }
         }
 

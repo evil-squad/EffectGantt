@@ -67,6 +67,7 @@
     import mokylin.utils.TimeUtil;
 
     [ResourceBundle("mokylingantt")]
+	[Event(name="visibleNowTimeChange", type="mokylin.gantt.GanttSheetEvent")]
     [Event(name="autoScroll", type="mokylin.gantt.GanttSheetEvent")]
     [Event(name="change", type="mokylin.gantt.GanttSheetEvent")]
     [Event(name="itemClick", type="mokylin.gantt.GanttSheetEvent")]
@@ -386,7 +387,7 @@
         private var _showBackgroundGrid:Boolean = true;
         private var _showDataTips:Boolean = true;
         private var _showEditingTips:Boolean = true;
-        private var _showHorizontalGridLines:Boolean;
+        private var _showHorizontalGridLines:Boolean=true;
         private var _showTimeGrid:Boolean = true;
         private var _showWorkingTimesGrid:Boolean = false;
         private var _explicitSnappingTimePrecision:Object;
@@ -402,6 +403,7 @@
         private var _timeGrid:TimeGrid;
         private var _timeScale:TimeScale;
 		private var _thumbLine:Sprite;
+		private var _nowTime:Number=0;
 		
         private var _timeRectangle:Rectangle;
         private var _timeRectangleChanged:Boolean;
@@ -1165,6 +1167,27 @@
             this._explicitMinVisibleTimeChanged = true;
             invalidateProperties();
         }
+		
+		[Bindable("nowTimeChanged")]
+		[Inspectable(category="General")]
+		public function get nowTime():Number
+		{
+			if (this._timeController)
+			{
+				return this._timeController.nowTime;
+			}
+			return this._nowTime;
+		}
+		
+		public function set nowTime(value:Number):void
+		{
+			this._nowTime = value;
+			if (this._timeController)
+			{
+				this._timeController.nowTime = value;
+			}
+			dispatchEvent(new Event("nowTimeChanged"));
+		}
 
         [Bindable("minZoomFactorChanged")]
         [Inspectable(category="General")]
@@ -1539,7 +1562,7 @@
         }
 
         [Bindable("showHorizontalGridLinesChanged")]
-        [Inspectable(category="Other", defaultValue="false")]
+        [Inspectable(category="Other", defaultValue="true")]
         public function get showHorizontalGridLines():Boolean
         {
             return this._showHorizontalGridLines;
@@ -1750,6 +1773,10 @@
             this._timeController = value;
             if (this._timeController)
             {
+				if(_nowTime)
+				{
+					this._timeController.nowTime = _nowTime;
+				}
                 if (this._explicitMinZoomFactor)
                 {
                     this._timeController.minimumZoomFactor = this._explicitMinZoomFactor;
@@ -2619,6 +2646,10 @@
                 {
                     return false;
                 }
+				//我自己加的，临时这么处理，不让关键帧能移动，因为现在还暂时做不到他的移动能同时更新他父节点的同步更新
+				if(taskItem.isMilestone)
+					return false;
+				//
                 return true;
             }
             return false;
@@ -5097,6 +5128,10 @@
 		{
 			_visibleNowTimeChanged = true;
 			invalidateProperties();
+			
+			var e:GanttSheetEvent = new GanttSheetEvent(GanttSheetEvent.VISIBLE_NOW_TIME_CHANGE);
+			e.triggerEvent = event;
+			dispatchEvent(e);
 		}
 
         private function timeController_visibleTimeRangeChangeHandler(event:GanttSheetEvent):void
@@ -5748,6 +5783,12 @@
             }
             var parents:Array = [];
             var parent:Object = collection.getParentItem(task);
+			
+			/*if(parent == null)
+			{
+				parent = task["parentSibling"];
+			}*/
+			
             while (parent != null)
             {
                 taskItem = this.itemToTaskItem(parent);

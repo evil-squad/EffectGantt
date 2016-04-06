@@ -80,7 +80,7 @@
                 patternBitmap = createVerticalDottedLinePatternBitmap(g, width);
                 if (width < 2)
                 {
-                    width = 2;
+                    width = 1;
                 }
                 g.lineStyle(width);
                 g.lineBitmapStyle(patternBitmap);

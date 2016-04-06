@@ -115,7 +115,7 @@
             var styleDeclaration:CSSStyleDeclaration = CSSUtil.createSelector("TimeScale", "mokylin.gantt", styleManager);
             styleDeclaration.defaultFactory = function ():void
             {
-                this.backgroundColors = ["0x262626", "0x000000"];
+                this.backgroundColors = ["0x262626", "0x1d1d1c"];
                 this.backgroundSkin = TimeScaleBackgroundSkin;
                 this.panCursor = AssetsUtil.PAN_HORIZONTAL_CURSOR;
                 this.rollOverAlpha = 1;

@@ -370,14 +370,11 @@
                                 loop++;
                                 index = dataGrid.verticalTotalRows - 1;
                             }
-                            else
-                            {
-                                if (index > (dataGrid.verticalTotalRows - 1))
-                                {
-                                    loop++;
-                                    index = 0;
-                                }
-                            }
+                            else if (index > (dataGrid.verticalTotalRows - 1))
+							{
+								loop++;
+								index = 0;
+							}
                             dataGrid.scrollToIndex(index);
                             newItem = dataGrid.indexToItemRenderer(index).data;
                         }
@@ -560,6 +557,10 @@
 
         override public function rowItemToTasks(rowItem:Object):Array
         {
+			if(Boolean(rowItem["isSibling"]))
+			{
+				return rowItem["getSibling"]();
+			}
             return rowItem == null ? null : [rowItem];
         }
 

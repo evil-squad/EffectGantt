@@ -818,10 +818,11 @@
             {
                 this._dividedBox = new HDividedBox();
                 this._dividedBox.name = "dividedBox";
-                this._dividedBox.setStyle("horizontalGap", 2);
+                this._dividedBox.setStyle("horizontalGap", 10);
                 this._dividedBox.minHeight = 0;
                 this._dividedBox.minWidth = 0;
                 this._dividedBox.enabled = enabled;
+				this._dividedBox.clipContent = false;
                 this._dividedBox.addEventListener(DividerEvent.DIVIDER_RELEASE, this._dividedBox_dividerReleaseHandler);
                 this._dividedBox.addEventListener(FlexEvent.UPDATE_COMPLETE, this._dividedBox_updateCompleteHandler);
                 addChild(this._dividedBox);

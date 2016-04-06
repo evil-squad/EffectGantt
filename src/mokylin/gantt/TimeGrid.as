@@ -16,7 +16,7 @@
 		/**
 		 * 当一个格子的宽度大于10时，就会画间隔线 
 		 */		
-		private const _minimumSizeBetweenTimeElements:Number = 10;
+		private const _minimumSizeBetweenTimeElements:Number = 50;
 		
 		private var _timeScaleUnit:TimeUnit;
 		private var _timeScaleSteps:Number = 1;
