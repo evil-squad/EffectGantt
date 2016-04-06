@@ -3,7 +3,7 @@
     public class TimeUtil 
     {
 		public static const MINIMUM_TIME:Number = 0;
-		public static const MAXIMUM_TIME:Number = 1000000;
+		public static const MAXIMUM_TIME:Number = 100000;
         public static const SUNDAY:int = 0;
         public static const MONDAY:int = 1;
         public static const TUESDAY:int = 2;

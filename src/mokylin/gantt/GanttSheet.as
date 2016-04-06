@@ -1184,6 +1184,7 @@
 			this._nowTime = value;
 			if (this._timeController)
 			{
+				_timeController.isMouseDownForChange(false);
 				this._timeController.nowTime = value;
 			}
 			dispatchEvent(new Event("nowTimeChanged"));
@@ -1775,6 +1776,7 @@
             {
 				if(_nowTime)
 				{
+					_timeController.isMouseDownForChange(false);
 					this._timeController.nowTime = _nowTime;
 				}
                 if (this._explicitMinZoomFactor)
@@ -5131,6 +5133,7 @@
 			
 			var e:GanttSheetEvent = new GanttSheetEvent(GanttSheetEvent.VISIBLE_NOW_TIME_CHANGE);
 			e.triggerEvent = event;
+			e.isMouseDownForChange = event.isMouseDownForChange;
 			dispatchEvent(e);
 		}
 

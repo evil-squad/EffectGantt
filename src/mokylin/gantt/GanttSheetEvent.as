@@ -41,6 +41,7 @@
         public var zoomFactorChanged:Boolean;
 		public var projectionChanged:Boolean;
 		public var nowTimeChanged:Boolean;
+		public var isMouseDownForChange:Boolean;
 		public var timeRangeChanged:Boolean;
 
         public function GanttSheetEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, item:Object=null, itemArea:String=null, 
@@ -127,6 +128,7 @@
             event.triggerEvent = this.triggerEvent;
             event.zoomFactorChanged = this.zoomFactorChanged;
 			event.nowTimeChanged = this.nowTimeChanged;
+			event.isMouseDownForChange = this.isMouseDownForChange;
 			event.timeRangeChanged = this.timeRangeChanged;
             return event;
         }

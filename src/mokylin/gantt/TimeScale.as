@@ -722,6 +722,7 @@
 				{
 					_thumb.x = - _thumb.width/2;
 				}
+				_timeController.isMouseDownForChange(true);
 				this._timeController.nowTime = this._timeController.getTime(p.x);
 				
 				if(_lastPanLocalPoint != null)
@@ -889,6 +890,7 @@
 				{
 					_thumb.x = - _thumb.width/2;
 				}
+				_timeController.isMouseDownForChange(true);
 				this._timeController.nowTime = this._timeController.getTime(p.x);
 			}
 			

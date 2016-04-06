@@ -58,6 +58,7 @@
         private var _isAdjusting:Boolean;
         private var _visibleTimeRangeChangedWhileAdusting:Boolean;
         private var _previousState:TimeControllerState;
+		private var _isMouseDownForChange:Boolean;
 
         public function TimeController()
         {
@@ -219,6 +220,11 @@
 		{
 			this._startTime = this.getConstrainedStart(value);
 			this._endTime = this.getTime(this.width);
+		}
+		
+		public function isMouseDownForChange(b:Boolean):void
+		{
+			_isMouseDownForChange = b;
 		}
 		
 		public function get nowTime():Number
@@ -415,7 +421,7 @@
 
         public function shiftByCoordinate(delta:Number, animate:Boolean=false,unit:TimeUnit=null,steps:Number=0):void
         {
-			trace("***********************************" + delta);
+//			trace("***********************************" + delta);
             var projectedTimeOffset:Number;
 			if(unit != null && steps != 0)
 			{
@@ -783,6 +789,7 @@
 			}
 			var event:GanttSheetEvent = new GanttSheetEvent(GanttSheetEvent.VISIBLE_NOW_TIME_CHANGE);
 			event.adjusting = this.isAdjusting;
+			event.isMouseDownForChange = this._isMouseDownForChange;
 			event.nowTimeChanged = true;
 			dispatchEvent(event);
 		}
