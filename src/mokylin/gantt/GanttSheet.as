@@ -2644,7 +2644,7 @@
             if (dataItem is TaskItem)
             {
                 taskItem = TaskItem(dataItem);
-                if (taskItem.isSummary && this._autoResizeSummary)
+                if ((taskItem.isSummary && this._autoResizeSummary) || taskItem.noChange)
                 {
                     return false;
                 }
@@ -2697,7 +2697,7 @@
             if (dataItem is TaskItem)
             {
                 taskItem = TaskItem(dataItem);
-                if (taskItem.isMilestone || (taskItem.isSummary && this._autoResizeSummary))
+                if (taskItem.isMilestone || (taskItem.isSummary && this._autoResizeSummary)|| taskItem.noChange)
                 {
                     return false;
                 }

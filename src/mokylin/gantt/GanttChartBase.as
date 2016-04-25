@@ -640,6 +640,11 @@
                 value = DataUtil.getFieldValue(item.data, this.taskIsMilestoneField, null, this.taskIsMilestoneFunction);
                 item.isMilestone = value!=null ? Boolean(value) : false;
             }
+			if (!property || property == "noChange")
+			{
+				value = DataUtil.getFieldValue(item.data, property);
+				item.noChange = value!=null ? Boolean(value) : false;
+			}
         }
 
 		public function commitTaskItem(item:TaskItem):void

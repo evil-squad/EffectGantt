@@ -1,14 +1,15 @@
 ﻿package mokylin.gantt
 {
-    import mokylin.core.DataItem;
-    import mokylin.utils.DataUtil;
-    import mokylin.gantt.supportClasses.MessageUtil;
     import mx.logging.LogEventLevel;
+    
+    import mokylin.core.DataItem;
     import mokylin.gantt.supportClasses.GanttProperties;
+    import mokylin.gantt.supportClasses.MessageUtil;
+    import mokylin.utils.DataUtil;
 
     public class TaskItem extends DataItem 
     {
-
+		public var noChange:Boolean;
         public var endTime:Number;
         public var isMilestone:Boolean;
         public var isSummary:Boolean;
